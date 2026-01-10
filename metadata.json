@@ -1,0 +1,7 @@
+{
+  "name": "Magic Dziulis",
+  "description": "Interaktyvi AI valdoma pasakų knygelė vaikams, kurianti unikalias istorijas su aukštos kokybės iliustracijomis ir įgarsinimu lietuvių kalba.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}

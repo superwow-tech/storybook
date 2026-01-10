@@ -1,0 +1,126 @@
+
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Magic Dziulis</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Loading Baloo 2 and Nunito with explicit latin-ext subset for perfect Lithuanian support -->
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap&subset=latin-ext" rel="stylesheet">
+  <style>
+    :root {
+      --app-height: 100%;
+    }
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    body {
+      /* Nunito is a very stable, rounded font with excellent Lithuanian support */
+      font-family: 'Nunito', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+      background: radial-gradient(circle at top right, #fdfaff 0%, #f5f3ff 100%);
+      color: #1e1b4b; /* indigo-950 */
+    }
+    
+    /* Magical shimmer effect for UI elements */
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .shimmer-text {
+      background: linear-gradient(90deg, #4f46e5, #9333ea, #4f46e5);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: shimmer 4s linear infinite;
+    }
+
+    /* Color changing effect without sliding movement */
+    @keyframes hueShift {
+      0% { filter: hue-rotate(0deg); }
+      100% { filter: hue-rotate(360deg); }
+    }
+    .magic-color-title {
+      background: linear-gradient(to right, #6366f1, #a855f7, #ec4899);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: hueShift 8s linear infinite;
+      display: inline-block;
+    }
+
+    .font-magic {
+      /* Baloo 2 is incredibly kid-friendly, playful, and has robust Lithuanian support */
+      font-family: 'Baloo 2', cursive;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+    
+    .font-body {
+      font-family: 'Nunito', sans-serif;
+    }
+
+    .scrollbar-hide::-webkit-scrollbar {
+      display: none;
+    }
+    .scrollbar-hide {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    
+    /* Custom focus ring */
+    textarea:focus {
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+    }
+
+    /* Magical Paper Texture */
+    .paper-texture {
+      background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+      background-color: #ffffff;
+    }
+
+    /* Page Turn Animations */
+    @keyframes pageTurnIn {
+      from { transform: translateX(30px) scale(0.95) rotateY(-5deg); opacity: 0; }
+      to { transform: translateX(0) scale(1) rotateY(0); opacity: 1; }
+    }
+    @keyframes pageTurnOut {
+      from { transform: translateX(0) scale(1) rotateY(0); opacity: 1; }
+      to { transform: translateX(-30px) scale(0.95) rotateY(5deg); opacity: 0; }
+    }
+    .page-active {
+      animation: pageTurnIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+
+    /* Painting Sparkle Animation */
+    @keyframes sparkle {
+      0%, 100% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+    .sparkle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: white;
+      border-radius: 50%;
+      animation: sparkle 1.5s infinite;
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "@google/genai": "https://esm.sh/@google/genai@^1.35.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+  }
+}
+</script>
+</head>
+<body>
+  <div id="root" class="h-full"></div>
+</body>
+</html>

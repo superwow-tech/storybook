@@ -1,0 +1,253 @@
+
+import React, { useState, useEffect } from 'react';
+import { AppState, Story, ImageSize, Language } from './types';
+import { translations } from './translations';
+import LandingPage from './components/LandingPage';
+import StoryWizard from './components/StoryWizard';
+import StoryReader from './components/StoryReader';
+import InfoPanel from './components/InfoPanel';
+import { gemini } from './geminiService';
+
+const App: React.FC = () => {
+  const [state, setState] = useState<AppState>({
+    apiKeySelected: false,
+    isGenerating: false,
+    currentStory: null,
+    currentPageIndex: 0,
+    imageSize: '1K',
+    language: 'lt'
+  });
+
+  const [showInfo, setShowInfo] = useState(false);
+  const [loadingMessageIdx, setLoadingMessageIdx] = useState(0);
+
+  const t = translations[state.language];
+
+  useEffect(() => {
+    let interval: any;
+    if (state.isGenerating) {
+      interval = setInterval(() => {
+        setLoadingMessageIdx((prev) => (prev + 1) % t.loadingMessages.length);
+      }, 2500);
+    }
+    return () => clearInterval(interval);
+  }, [state.isGenerating, t.loadingMessages.length]);
+
+  useEffect(() => {
+    const checkKey = async () => {
+      // @ts-ignore
+      const hasKey = await window.aistudio.hasSelectedApiKey();
+      if (hasKey) setState(prev => ({ ...prev, apiKeySelected: true }));
+    };
+    checkKey();
+  }, []);
+
+  const handleStart = async () => {
+    // @ts-ignore
+    await window.aistudio.openSelectKey();
+    setState(prev => ({ ...prev, apiKeySelected: true }));
+  };
+
+  const handleReset = () => {
+    setState(prev => ({
+      ...prev,
+      currentStory: null,
+      currentPageIndex: 0,
+      isGenerating: false
+    }));
+  };
+
+  const toggleLanguage = () => {
+    setState(prev => ({
+      ...prev,
+      language: prev.language === 'en' ? 'lt' : 'en'
+    }));
+  };
+
+  const generateStory = async (userPrompt: string, pageCount: number) => {
+    setState(prev => ({ ...prev, isGenerating: true, currentStory: null, currentPageIndex: 0 }));
+    try {
+      const storyStructure = await gemini.generateStoryStructure(userPrompt, state.language, pageCount);
+      const firstPage = storyStructure.pages[0];
+      const imageUrl = await gemini.generateImage(firstPage.imagePrompt, state.imageSize);
+      const audioData = await gemini.generateSpeech(firstPage.text, state.language);
+      
+      storyStructure.pages[0] = { ...firstPage, imageUrl, audioData };
+      
+      setState(prev => ({ 
+        ...prev, 
+        currentStory: storyStructure, 
+        isGenerating: false 
+      }));
+
+      loadRemainingPages(storyStructure);
+    } catch (error) {
+      console.error(error);
+      setState(prev => ({ ...prev, isGenerating: false }));
+      alert(t.errorMagic);
+    }
+  };
+
+  const loadRemainingPages = async (story: Story) => {
+    const updatedPages = [...story.pages];
+    for (let i = 1; i < updatedPages.length; i++) {
+      try {
+        const imageUrl = await gemini.generateImage(updatedPages[i].imagePrompt, state.imageSize);
+        const audioData = await gemini.generateSpeech(updatedPages[i].text, state.language);
+        updatedPages[i] = { ...updatedPages[i], imageUrl, audioData };
+        
+        setState(prev => {
+          if (!prev.currentStory) return prev;
+          return { ...prev, currentStory: { ...prev.currentStory, pages: updatedPages } };
+        });
+      } catch (err) {
+        console.warn(`Failed to load page ${i}`, err);
+      }
+    }
+  };
+
+  if (!state.apiKeySelected) {
+    return <LandingPage onStart={handleStart} language={state.language} />;
+  }
+
+  return (
+    <div className="h-full flex flex-col relative overflow-hidden bg-white">
+      <div className="absolute top-0 right-0 w-[50%] h-[40%] bg-indigo-50/50 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute bottom-0 left-0 w-[40%] h-[30%] bg-purple-50/50 blur-[100px] rounded-full pointer-events-none -z-10" />
+
+      <header className="px-6 py-4 flex justify-between items-center bg-white/60 backdrop-blur-md border-b border-indigo-50/50 flex-shrink-0 z-50">
+        <div 
+          className="flex items-center gap-2 cursor-pointer group"
+          onClick={handleReset}
+        >
+          <div className="flex flex-col">
+            <h1 className="text-xl font-magic text-indigo-700 leading-[0.9]">Magic</h1>
+            <h1 className="text-xl font-magic text-indigo-700 leading-[0.9]">Dziulis</h1>
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:block">
+            <select 
+              value={state.imageSize}
+              onChange={(e) => setState(prev => ({ ...prev, imageSize: e.target.value as ImageSize }))}
+              className="bg-white border border-indigo-100 rounded-2xl px-4 py-1.5 text-xs font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer shadow-sm"
+            >
+              <option value="1K">1K {t.quality}</option>
+              <option value="2K">2K {t.quality}</option>
+              <option value="4K">4K {t.quality}</option>
+            </select>
+          </div>
+
+          <button 
+            onClick={toggleLanguage}
+            className="w-10 h-10 md:w-11 md:h-11 bg-white border border-indigo-100/60 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] text-indigo-600 hover:shadow-md active:scale-95 transition-all flex items-center justify-center font-bold text-xs uppercase tracking-tighter"
+            aria-label="Switch Language"
+          >
+            {state.language === 'en' ? 'LT' : 'EN'}
+          </button>
+          
+          <button 
+            onClick={() => setShowInfo(!showInfo)}
+            className="w-10 h-10 md:w-11 md:h-11 bg-white border border-indigo-100/60 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] text-indigo-600 hover:shadow-md active:scale-95 transition-all flex items-center justify-center"
+            aria-label="Informacija"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </button>
+        </div>
+      </header>
+
+      <main className="flex-1 relative overflow-y-auto scrollbar-hide px-4 pt-2 pb-8 sm:py-6 md:px-8 flex flex-col items-center justify-start sm:justify-center">
+        <div className="w-full max-w-4xl flex flex-col items-center">
+          {!state.currentStory && !state.isGenerating && (
+            <StoryWizard onGenerate={generateStory} language={state.language} />
+          )}
+
+          {state.isGenerating && (
+            <div className="flex flex-col items-center justify-center w-full max-w-lg relative py-12">
+              <div className="absolute inset-0 pointer-events-none">
+                {[...Array(15)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="absolute bg-indigo-300 rounded-full animate-[floatUp_6s_infinite_ease-in-out]"
+                    style={{
+                      width: Math.random() * 8 + 4 + 'px',
+                      height: Math.random() * 8 + 4 + 'px',
+                      left: Math.random() * 100 + '%',
+                      bottom: '-10%',
+                      animationDelay: Math.random() * 5 + 's',
+                      opacity: Math.random() * 0.5 + 0.2
+                    }}
+                  />
+                ))}
+              </div>
+
+              <div className="relative mb-10">
+                <div className="absolute -inset-10 bg-indigo-400/10 blur-[60px] rounded-full animate-pulse" />
+                <div className="w-36 h-36 md:w-44 md:h-44 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[3.5rem] flex items-center justify-center shadow-[0_25px_60px_-10px_rgba(79,70,229,0.4)] relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 -translate-x-full animate-[sweep_4s_infinite]" />
+                  <div className="relative z-10 text-white animate-[bookFlap_2s_infinite_ease-in-out]">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 md:h-24 md:w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                  </div>
+                  <div className="absolute top-4 right-4 text-white/40 text-xl animate-pulse">✨</div>
+                  <div className="absolute bottom-6 left-6 text-white/30 text-lg animate-pulse" style={{ animationDelay: '1.2s' }}>✨</div>
+                </div>
+              </div>
+
+              <div className="text-center space-y-3 relative z-10 px-6">
+                <div className="h-12 overflow-hidden flex items-center justify-center">
+                  <p key={loadingMessageIdx} className="text-2xl md:text-3xl font-magic text-indigo-900 animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+                    {t.loadingMessages[loadingMessageIdx]}
+                  </p>
+                </div>
+                <p className="text-indigo-400 font-bold text-xs md:text-sm tracking-[0.2em] uppercase">
+                  {t.waitMoment}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {state.currentStory && (
+            <StoryReader 
+              story={state.currentStory} 
+              currentIndex={state.currentPageIndex}
+              onPageChange={(idx) => setState(prev => ({ ...prev, currentPageIndex: idx }))}
+              onReset={handleReset}
+              language={state.language}
+            />
+          )}
+        </div>
+      </main>
+
+      {showInfo && <InfoPanel onClose={() => setShowInfo(false)} language={state.language} />}
+
+      <style>{`
+        @keyframes sweep {
+          0% { transform: translateX(-150%) skewX(-15deg); }
+          50%, 100% { transform: translateX(150%) skewX(-15deg); }
+        }
+        @keyframes bookFlap {
+          0%, 100% { transform: translateY(0) rotate(0deg) scale(1); }
+          50% { transform: translateY(-10px) rotate(-2deg) scale(1.05); }
+        }
+        @keyframes floatUp {
+          0% { transform: translateY(0) scale(1); opacity: 0; }
+          20% { opacity: 0.6; }
+          80% { opacity: 0.6; }
+          100% { transform: translateY(-120vh) scale(0.5); opacity: 0; }
+        }
+        @keyframes bounceIn {
+          0% { transform: translateY(20px) scale(0.8); opacity: 0; }
+          60% { transform: translateY(-5px) scale(1.05); }
+          100% { transform: translateY(0) scale(1); opacity: 1; }
+        }
+      `}</style>
+    </div>
+  );
+};
+
+export default App;
