@@ -43,10 +43,14 @@ export class GeminiService {
     const langName = language === 'en' ? 'English' : 'Lithuanian';
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Create a charming children's story based on: "${prompt}". 
+      contents: `Create an enchanting children's story titled based on: "${prompt}". 
+      
+      CRITICAL REQUIREMENT: The main hero of the story MUST BE "Dziulis" (pronounced 'Jew-lis'). 
+      Dziulis is a curious, kind-hearted magical boy with a blue star-topped hat and a small cape. He solves problems with kindness and magic.
+      
       THE STORY MUST BE WRITTEN IN ${langName.toUpperCase()}.
       Return the story as a JSON object with a title and exactly ${pageCount} pages. 
-      Each page must have "text" (max 3 sentences) and "imagePrompt" (detailed English description for an illustration, kid-friendly style).`,
+      Each page must have "text" (a rich, engaging paragraph of 4-6 sentences) and "imagePrompt" (a highly detailed English description for a whimsical, cinematic children's book illustration featuring Dziulis).`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -79,7 +83,7 @@ export class GeminiService {
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-image-preview',
       contents: {
-        parts: [{ text: `A magical children's book illustration: ${prompt}. Soft colors, high quality, whimsical style.` }]
+        parts: [{ text: `A magical children's book illustration: ${prompt}. Dziulis is a cute magical boy with a star hat. Soft cinematic lighting, vibrant colors, dreamy whimsical style, professional art quality.` }]
       },
       config: {
         imageConfig: {
@@ -104,7 +108,7 @@ export class GeminiService {
     
     const response = await ai.models.generateContent({
       model: "gemini-2.5-flash-preview-tts",
-      contents: [{ parts: [{ text: `Read this story page in a warm, friendly, expressive voice in ${langName}: ${text}` }] }],
+      contents: [{ parts: [{ text: `Read this story page slowly and expressively in ${langName}: ${text}` }] }],
       config: {
         responseModalities: [Modality.AUDIO],
         speechConfig: {

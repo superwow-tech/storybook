@@ -8,6 +8,8 @@ import StoryReader from './components/StoryReader';
 import InfoPanel from './components/InfoPanel';
 import { gemini } from './geminiService';
 
+const STORAGE_KEY = 'magic_dziulis_stories';
+
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
     apiKeySelected: false,
@@ -15,13 +17,32 @@ const App: React.FC = () => {
     currentStory: null,
     currentPageIndex: 0,
     imageSize: '1K',
-    language: 'lt'
+    language: 'lt',
+    savedStories: []
   });
 
   const [showInfo, setShowInfo] = useState(false);
   const [loadingMessageIdx, setLoadingMessageIdx] = useState(0);
 
   const t = translations[state.language];
+
+  // Load saved stories on mount
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setState(prev => ({ ...prev, savedStories: parsed }));
+      } catch (e) {
+        console.error("Failed to parse saved stories", e);
+      }
+    }
+  }, []);
+
+  // Persist saved stories whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.savedStories));
+  }, [state.savedStories]);
 
   useEffect(() => {
     let interval: any;
@@ -73,6 +94,8 @@ const App: React.FC = () => {
       const audioData = await gemini.generateSpeech(firstPage.text, state.language);
       
       storyStructure.pages[0] = { ...firstPage, imageUrl, audioData };
+      storyStructure.id = Date.now().toString();
+      storyStructure.timestamp = Date.now();
       
       setState(prev => ({ 
         ...prev, 
@@ -98,12 +121,47 @@ const App: React.FC = () => {
         
         setState(prev => {
           if (!prev.currentStory) return prev;
-          return { ...prev, currentStory: { ...prev.currentStory, pages: updatedPages } };
+          const updatedStory = { ...prev.currentStory, pages: updatedPages };
+          // If this story is already in savedStories, update it there too
+          const savedIndex = prev.savedStories.findIndex(s => s.id === updatedStory.id);
+          if (savedIndex !== -1) {
+             const newSaved = [...prev.savedStories];
+             newSaved[savedIndex] = updatedStory;
+             return { ...prev, currentStory: updatedStory, savedStories: newSaved };
+          }
+          return { ...prev, currentStory: updatedStory };
         });
       } catch (err) {
         console.warn(`Failed to load page ${i}`, err);
       }
     }
+  };
+
+  const saveStory = (story: Story) => {
+    setState(prev => {
+      const alreadyExists = prev.savedStories.some(s => s.id === story.id);
+      if (alreadyExists) return prev;
+      return {
+        ...prev,
+        savedStories: [story, ...prev.savedStories].slice(0, 12) // Keep last 12 stories
+      };
+    });
+  };
+
+  const loadSavedStory = (story: Story) => {
+    setState(prev => ({
+      ...prev,
+      currentStory: story,
+      currentPageIndex: 0,
+      isGenerating: false
+    }));
+  };
+
+  const deleteSavedStory = (id: string) => {
+    setState(prev => ({
+      ...prev,
+      savedStories: prev.savedStories.filter(s => s.id !== id)
+    }));
   };
 
   if (!state.apiKeySelected) {
@@ -162,7 +220,13 @@ const App: React.FC = () => {
       <main className="flex-1 relative overflow-y-auto scrollbar-hide px-4 pt-2 pb-8 sm:py-6 md:px-8 flex flex-col items-center justify-start sm:justify-center">
         <div className="w-full max-w-4xl flex flex-col items-center">
           {!state.currentStory && !state.isGenerating && (
-            <StoryWizard onGenerate={generateStory} language={state.language} />
+            <StoryWizard 
+              onGenerate={generateStory} 
+              language={state.language} 
+              savedStories={state.savedStories}
+              onLoadStory={loadSavedStory}
+              onDeleteStory={deleteSavedStory}
+            />
           )}
 
           {state.isGenerating && (
@@ -218,6 +282,8 @@ const App: React.FC = () => {
               onPageChange={(idx) => setState(prev => ({ ...prev, currentPageIndex: idx }))}
               onReset={handleReset}
               language={state.language}
+              onSave={() => saveStory(state.currentStory!)}
+              isSaved={state.savedStories.some(s => s.id === state.currentStory?.id)}
             />
           )}
         </div>

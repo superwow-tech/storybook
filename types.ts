@@ -10,14 +10,11 @@ export interface Page {
 }
 
 export interface Story {
+  id?: string;
+  timestamp?: number;
   title: string;
   pages: Page[];
   language: Language;
-}
-
-export interface ChatMessage {
-  role: 'user' | 'model';
-  text: string;
 }
 
 export interface AppState {
@@ -27,4 +24,5 @@ export interface AppState {
   currentPageIndex: number;
   imageSize: ImageSize;
   language: Language;
+  savedStories: Story[];
 }
