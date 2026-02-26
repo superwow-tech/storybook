@@ -28,6 +28,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
   const [isPlaying, setIsPlaying] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [hasReadCurrentPage, setHasReadCurrentPage] = useState(false);
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const currentSourceRef = useRef<AudioBufferSourceNode | null>(null);
@@ -119,6 +120,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
       
       source.onended = () => {
         stopAudio();
+        setHasReadCurrentPage(true);
       };
 
       startTimeRef.current = ctx.currentTime;
@@ -177,6 +179,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
 
   useEffect(() => {
     stopAudio();
+    setHasReadCurrentPage(false);
   }, [currentIndex]);
 
   useEffect(() => {
@@ -185,10 +188,38 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
 
   return (
     <div 
-      className="w-full h-full flex flex-col items-center justify-start py-2 sm:py-4"
+      className="w-full h-full flex flex-col items-center justify-start py-2 sm:py-4 relative"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Floating Navigation Buttons */}
+      {!isPlaying && hasReadCurrentPage && (
+        <>
+          {currentIndex > 0 && (
+            <button 
+              onClick={handlePrev}
+              className="fixed left-2 sm:left-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 sm:w-16 sm:h-16 bg-white/60 backdrop-blur-md rounded-full flex items-center justify-center text-[#4a5d23] shadow-lg hover:bg-white transition-all active:scale-90"
+              aria-label={t.previous}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+          )}
+          {!isLastPage && (
+            <button 
+              onClick={handleNext}
+              className="fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 sm:w-16 sm:h-16 bg-[#749e47] rounded-full flex items-center justify-center text-white shadow-lg hover:bg-[#5b8e4d] transition-all active:scale-90 animate-[pulseScale_2s_infinite]"
+              aria-label={t.next}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          )}
+        </>
+      )}
+
       <div className="w-full max-w-[500px] flex flex-col gap-6 relative z-10 px-4">
         
         <div className="w-full aspect-[4/3] bg-[#fcfaf5] relative overflow-hidden group rounded-[2rem] shadow-lg border border-white/40">
@@ -272,6 +303,16 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
           </div>
 
           <div className="space-y-4">
+            {/* Page Indicator moved above the button */}
+            <div className="flex justify-center gap-2 mb-2">
+              {story.pages.map((_, i) => (
+                <div 
+                  key={i} 
+                  className={`h-1.5 rounded-full transition-all duration-500 ${i === currentIndex ? 'bg-[#749e47] w-4 shadow-sm' : 'bg-white/30 w-1.5'}`} 
+                />
+              ))}
+            </div>
+
             <button
               onClick={playAudio}
               disabled={!currentPage?.audioData || isPlaying}
@@ -302,7 +343,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
               )}
             </button>
 
-            {isLastPage && (
+            {isLastPage && !isPlaying && hasReadCurrentPage && (
               <button
                 onClick={onReset}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-[1.5rem] font-magic text-xl text-[#4a5d23] bg-white/80 hover:bg-white transition-all animate-[bounceIn_0.5s_ease-out] shadow-sm uppercase tracking-wide font-bold"
@@ -310,33 +351,6 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
                 <span>{t.oneMore}</span>
               </button>
             )}
-          </div>
-
-          <div className="flex justify-between items-center px-2 pb-4">
-            <button 
-              onClick={handlePrev} 
-              disabled={currentIndex === 0}
-              className={`flex items-center gap-1 text-[10px] font-black tracking-widest transition-all px-4 py-2.5 rounded-xl ${currentIndex === 0 ? 'opacity-0 pointer-events-none' : 'text-[#4a5d23]/60 hover:text-[#4a5d23] hover:bg-white/30'}`}
-            >
-              <span>{t.previous}</span>
-            </button>
-            
-            <div className="flex gap-2">
-              {story.pages.map((_, i) => (
-                <div 
-                  key={i} 
-                  className={`h-1.5 rounded-full transition-all duration-500 ${i === currentIndex ? 'bg-[#749e47] w-4 shadow-sm' : 'bg-white/30 w-1.5'}`} 
-                />
-              ))}
-            </div>
-
-            <button 
-              onClick={handleNext} 
-              disabled={isLastPage}
-              className={`flex items-center gap-1 text-[10px] font-black tracking-widest transition-all px-4 py-2.5 rounded-xl ${isLastPage ? 'opacity-0 pointer-events-none' : 'text-[#4a5d23]/60 hover:text-[#4a5d23] hover:bg-white/30'}`}
-            >
-              <span>{t.next}</span>
-            </button>
           </div>
         </div>
       </div>
@@ -358,6 +372,10 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
         @keyframes soundWave {
           0%, 100% { height: 8px; }
           50% { height: 16px; }
+        }
+        @keyframes pulseScale {
+          0%, 100% { transform: translateY(-50%) scale(1); }
+          50% { transform: translateY(-50%) scale(1.1); }
         }
       `}</style>
     </div>
