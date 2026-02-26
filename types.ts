@@ -1,12 +1,19 @@
 
-export type ImageSize = '1K' | '2K' | '4K';
 export type Language = 'en' | 'lt';
+
+export type SoundType = 'magic' | 'animal' | 'nature' | 'mechanical' | 'transport' | 'emotion';
+
+export interface SoundEffect {
+  word: string;
+  type: SoundType;
+}
 
 export interface Page {
   text: string;
   imagePrompt: string;
   imageUrl?: string;
   audioData?: string;
+  soundEffects?: SoundEffect[];
 }
 
 export interface Story {
@@ -22,7 +29,6 @@ export interface AppState {
   isGenerating: boolean;
   currentStory: Story | null;
   currentPageIndex: number;
-  imageSize: ImageSize;
   language: Language;
   savedStories: Story[];
 }

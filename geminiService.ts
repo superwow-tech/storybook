@@ -1,6 +1,6 @@
 
 import { GoogleGenAI, Type, Modality } from "@google/genai";
-import { Story, ImageSize, Language } from "./types";
+import { Story, Language, SoundType } from "./types";
 
 // Helper to decode base64 to bytes
 export function decodeBase64(base64: string): Uint8Array {
@@ -43,14 +43,18 @@ export class GeminiService {
     const langName = language === 'en' ? 'English' : 'Lithuanian';
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
-      contents: `Create an enchanting children's story titled based on: "${prompt}". 
+      contents: `Create an enchanting children's story based on: "${prompt}". 
       
       CRITICAL REQUIREMENT: The main hero of the story MUST BE "Dziulis" (pronounced 'Jew-lis'). 
-      Dziulis is a curious, kind-hearted magical boy with a blue star-topped hat and a small cape. He solves problems with kindness and magic.
+      Dziulis is a curious, kind-hearted magical boy with a blue star-topped hat and a small cape. 
+      He solves problems with kindness and magic.
       
       THE STORY MUST BE WRITTEN IN ${langName.toUpperCase()}.
       Return the story as a JSON object with a title and exactly ${pageCount} pages. 
-      Each page must have "text" (a rich, engaging paragraph of 4-6 sentences) and "imagePrompt" (a highly detailed English description for a whimsical, cinematic children's book illustration featuring Dziulis).`,
+      Each page must have:
+      1. "text": a rich paragraph of 4-6 sentences.
+      2. "imagePrompt": detailed English description for a whimsical illustration of Dziulis.
+      3. "soundEffects": An array of exactly 1 or 2 objects. Each object should have "word" (an exact word from the "text" that represents a sound or action like 'magic', 'train', 'bird', 'splash', 'laugh') and "type" (one of: 'magic', 'animal', 'nature', 'mechanical', 'transport', 'emotion').`,
       config: {
         responseMimeType: "application/json",
         responseSchema: {
@@ -63,9 +67,20 @@ export class GeminiService {
                 type: Type.OBJECT,
                 properties: {
                   text: { type: Type.STRING },
-                  imagePrompt: { type: Type.STRING }
+                  imagePrompt: { type: Type.STRING },
+                  soundEffects: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        word: { type: Type.STRING },
+                        type: { type: Type.STRING, enum: ['magic', 'animal', 'nature', 'mechanical', 'transport', 'emotion'] }
+                      },
+                      required: ["word", "type"]
+                    }
+                  }
                 },
-                required: ["text", "imagePrompt"]
+                required: ["text", "imagePrompt", "soundEffects"]
               }
             }
           },
@@ -78,17 +93,16 @@ export class GeminiService {
     return { ...parsed, language } as Story;
   }
 
-  async generateImage(prompt: string, size: ImageSize): Promise<string> {
+  async generateImage(prompt: string): Promise<string> {
     const ai = this.getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-image-preview',
+      model: 'gemini-2.5-flash-image',
       contents: {
         parts: [{ text: `A magical children's book illustration: ${prompt}. Dziulis is a cute magical boy with a star hat. Soft cinematic lighting, vibrant colors, dreamy whimsical style, professional art quality.` }]
       },
       config: {
         imageConfig: {
-          aspectRatio: "1:1",
-          imageSize: size
+          aspectRatio: "1:1"
         }
       }
     });

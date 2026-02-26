@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Magic Dziulis</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Loading Baloo 2 and Nunito with explicit latin-ext subset for perfect Lithuanian support -->
-  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap&subset=latin-ext" rel="stylesheet">
+  <!-- Loading Baloo 2, Nunito, and Dancing Script for the garden theme -->
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400..800&family=Nunito:ital,wght@0,200..1000;1,200..1000&family=Dancing+Script:wght@600;700&display=swap&subset=latin-ext" rel="stylesheet">
   <style>
     :root {
       --app-height: 100%;
@@ -19,11 +19,14 @@
       overflow: hidden;
     }
     body {
-      /* Nunito is a very stable, rounded font with excellent Lithuanian support */
       font-family: 'Nunito', sans-serif;
       -webkit-tap-highlight-color: transparent;
-      background: radial-gradient(circle at top right, #fdfaff 0%, #f5f3ff 100%);
-      color: #1e1b4b; /* indigo-950 */
+      background: 
+        url('https://www.transparenttextures.com/patterns/watercolor.png'),
+        radial-gradient(circle at 50% 0%, #e0f2fe 0%, #bae6fd 30%, transparent 50%),
+        linear-gradient(to bottom, #f0fdf4 0%, #dcfce7 40%, #86efac 100%);
+      background-attachment: fixed;
+      color: #44403c;
     }
     
     /* Magical shimmer effect for UI elements */
@@ -32,7 +35,7 @@
       100% { background-position: 200% 0; }
     }
     .shimmer-text {
-      background: linear-gradient(90deg, #4f46e5, #9333ea, #4f46e5);
+      background: linear-gradient(90deg, #749e47, #9bbf6b, #749e47);
       background-size: 200% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
@@ -42,20 +45,24 @@
     /* Color changing effect without sliding movement */
     @keyframes hueShift {
       0% { filter: hue-rotate(0deg); }
-      100% { filter: hue-rotate(360deg); }
+      100% { filter: hue-rotate(30deg); }
     }
     .magic-color-title {
-      background: linear-gradient(to right, #6366f1, #a855f7, #ec4899);
+      background: linear-gradient(to right, #4a5d23, #749e47, #5b8e4d);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: hueShift 8s linear infinite;
+      animation: hueShift 8s linear infinite alternate;
       display: inline-block;
     }
 
     .font-magic {
-      /* Baloo 2 is incredibly kid-friendly, playful, and has robust Lithuanian support */
       font-family: 'Baloo 2', cursive;
       font-weight: 700;
+      line-height: 1.2;
+    }
+    
+    .font-script {
+      font-family: 'Dancing Script', cursive;
       line-height: 1.2;
     }
     
@@ -73,13 +80,47 @@
     
     /* Custom focus ring */
     textarea:focus {
-      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+      box-shadow: 0 0 0 4px rgba(155, 191, 107, 0.2);
     }
 
     /* Magical Paper Texture */
-    .paper-texture {
-      background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
-      background-color: #ffffff;
+    .paper-card {
+      background-color: #fdfbf7;
+      background-image: url("https://www.transparenttextures.com/patterns/cream-paper.png");
+      border: 1px solid #e8e4d9;
+      box-shadow: 0 10px 25px rgba(65, 83, 59, 0.15), inset 0 0 20px rgba(255,255,255,0.5);
+    }
+
+    .garden-button {
+      background: linear-gradient(to bottom, #9bbf6b, #749e47);
+      box-shadow: 0 4px 0 #527530, 0 8px 15px rgba(0,0,0,0.1);
+      border: 1px solid #85ab57;
+      color: white;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+    }
+    .garden-button:active:not(:disabled) {
+      transform: translateY(4px);
+      box-shadow: 0 0 0 #527530, 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .garden-button:disabled {
+      background: #e5e0d3;
+      box-shadow: 0 4px 0 #dcd7c9;
+      border-color: #dcd7c9;
+      color: #a8a29e;
+      text-shadow: none;
+      transform: none;
+    }
+
+    .garden-input {
+      background-color: #fcfaf5;
+      border: 2px solid #e5e0d3;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02);
+      color: #57534e;
+    }
+    .garden-input:focus {
+      border-color: #9bbf6b;
+      outline: none;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.02), 0 0 0 3px rgba(155, 191, 107, 0.2);
     }
 
     /* Page Turn Animations */
@@ -119,8 +160,10 @@
   }
 }
 </script>
+<link rel="stylesheet" href="/index.css">
 </head>
 <body>
   <div id="root" class="h-full"></div>
+<script type="module" src="/index.tsx"></script>
 </body>
 </html>

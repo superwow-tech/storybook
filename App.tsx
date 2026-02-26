@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { AppState, Story, ImageSize, Language } from './types';
+import { AppState, Story, Language } from './types';
 import { translations } from './translations';
 import LandingPage from './components/LandingPage';
 import StoryWizard from './components/StoryWizard';
@@ -16,7 +16,6 @@ const App: React.FC = () => {
     isGenerating: false,
     currentStory: null,
     currentPageIndex: 0,
-    imageSize: '1K',
     language: 'lt',
     savedStories: []
   });
@@ -90,7 +89,7 @@ const App: React.FC = () => {
     try {
       const storyStructure = await gemini.generateStoryStructure(userPrompt, state.language, pageCount);
       const firstPage = storyStructure.pages[0];
-      const imageUrl = await gemini.generateImage(firstPage.imagePrompt, state.imageSize);
+      const imageUrl = await gemini.generateImage(firstPage.imagePrompt);
       const audioData = await gemini.generateSpeech(firstPage.text, state.language);
       
       storyStructure.pages[0] = { ...firstPage, imageUrl, audioData };
@@ -115,7 +114,7 @@ const App: React.FC = () => {
     const updatedPages = [...story.pages];
     for (let i = 1; i < updatedPages.length; i++) {
       try {
-        const imageUrl = await gemini.generateImage(updatedPages[i].imagePrompt, state.imageSize);
+        const imageUrl = await gemini.generateImage(updatedPages[i].imagePrompt);
         const audioData = await gemini.generateSpeech(updatedPages[i].text, state.language);
         updatedPages[i] = { ...updatedPages[i], imageUrl, audioData };
         
@@ -169,37 +168,25 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden bg-white">
-      <div className="absolute top-0 right-0 w-[50%] h-[40%] bg-indigo-50/50 blur-[120px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute bottom-0 left-0 w-[40%] h-[30%] bg-purple-50/50 blur-[100px] rounded-full pointer-events-none -z-10" />
+    <div className="h-full flex flex-col relative overflow-hidden bg-transparent">
+      <div className="absolute top-0 right-0 w-[50%] h-[40%] bg-green-100/40 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute bottom-0 left-0 w-[40%] h-[30%] bg-yellow-50/40 blur-[100px] rounded-full pointer-events-none -z-10" />
 
-      <header className="px-6 py-4 flex justify-between items-center bg-white/60 backdrop-blur-md border-b border-indigo-50/50 flex-shrink-0 z-50">
+      <header className="px-6 py-3 flex justify-between items-center bg-white/40 backdrop-blur-md rounded-b-[2.5rem] shadow-md fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out -translate-y-[calc(100%-1.25rem)] hover:translate-y-0 hover:shadow-xl group/header">
+        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-16 h-1 bg-[#4a5d23]/20 rounded-full group-hover/header:opacity-0 transition-opacity duration-300" />
+        
         <div 
-          className="flex items-center gap-2 cursor-pointer group"
+          className="flex items-center gap-3 cursor-pointer group active:scale-95 transition-transform opacity-0 group-hover/header:opacity-100 duration-300"
           onClick={handleReset}
         >
-          <div className="flex flex-col">
-            <h1 className="text-xl font-magic text-indigo-700 leading-[0.9]">Magic</h1>
-            <h1 className="text-xl font-magic text-indigo-700 leading-[0.9]">Dziulis</h1>
-          </div>
+          <span className="text-2xl group-hover:rotate-12 transition-transform drop-shadow-sm">🌿</span>
+          <h1 className="text-2xl sm:text-3xl font-magic text-[#4a5d23] leading-none pt-1 tracking-tight">Magic Dziulis</h1>
         </div>
         
-        <div className="flex items-center gap-3">
-          <div className="hidden sm:block">
-            <select 
-              value={state.imageSize}
-              onChange={(e) => setState(prev => ({ ...prev, imageSize: e.target.value as ImageSize }))}
-              className="bg-white border border-indigo-100 rounded-2xl px-4 py-1.5 text-xs font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400 cursor-pointer shadow-sm"
-            >
-              <option value="1K">1K {t.quality}</option>
-              <option value="2K">2K {t.quality}</option>
-              <option value="4K">4K {t.quality}</option>
-            </select>
-          </div>
-
+        <div className="flex items-center gap-2 opacity-0 group-hover/header:opacity-100 duration-300">
           <button 
             onClick={toggleLanguage}
-            className="w-10 h-10 md:w-11 md:h-11 bg-white border border-indigo-100/60 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] text-indigo-600 hover:shadow-md active:scale-95 transition-all flex items-center justify-center font-bold text-xs uppercase tracking-tighter"
+            className="w-10 h-10 bg-white/60 hover:bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:shadow-md active:scale-90 transition-all flex items-center justify-center font-bold text-[11px] uppercase tracking-wider text-[#4a5d23]"
             aria-label="Switch Language"
           >
             {state.language === 'en' ? 'LT' : 'EN'}
@@ -207,17 +194,17 @@ const App: React.FC = () => {
           
           <button 
             onClick={() => setShowInfo(!showInfo)}
-            className="w-10 h-10 md:w-11 md:h-11 bg-white border border-indigo-100/60 rounded-2xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] text-indigo-600 hover:shadow-md active:scale-95 transition-all flex items-center justify-center"
+            className="w-10 h-10 bg-white/60 hover:bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:shadow-md active:scale-90 transition-all flex items-center justify-center"
             aria-label="Informacija"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#4a5d23]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
         </div>
       </header>
 
-      <main className="flex-1 relative overflow-y-auto scrollbar-hide px-4 pt-2 pb-8 sm:py-6 md:px-8 flex flex-col items-center justify-start sm:justify-center">
+      <main className="flex-1 relative overflow-y-auto scrollbar-hide px-4 pt-12 pb-8 sm:py-6 md:px-8 flex flex-col items-center justify-start sm:justify-center">
         <div className="w-full max-w-4xl flex flex-col items-center">
           {!state.currentStory && !state.isGenerating && (
             <StoryWizard 
@@ -235,7 +222,7 @@ const App: React.FC = () => {
                 {[...Array(15)].map((_, i) => (
                   <div
                     key={i}
-                    className="absolute bg-indigo-300 rounded-full animate-[floatUp_6s_infinite_ease-in-out]"
+                    className="absolute bg-[#9bbf6b] rounded-full animate-[floatUp_6s_infinite_ease-in-out]"
                     style={{
                       width: Math.random() * 8 + 4 + 'px',
                       height: Math.random() * 8 + 4 + 'px',
@@ -249,26 +236,26 @@ const App: React.FC = () => {
               </div>
 
               <div className="relative mb-10">
-                <div className="absolute -inset-10 bg-indigo-400/10 blur-[60px] rounded-full animate-pulse" />
-                <div className="w-36 h-36 md:w-44 md:h-44 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-[3.5rem] flex items-center justify-center shadow-[0_25px_60px_-10px_rgba(79,70,229,0.4)] relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/10 to-white/0 -translate-x-full animate-[sweep_4s_infinite]" />
+                <div className="absolute -inset-10 bg-[#9bbf6b]/20 blur-[60px] rounded-full animate-pulse" />
+                <div className="w-36 h-36 md:w-44 md:h-44 bg-gradient-to-br from-[#9bbf6b] to-[#749e47] rounded-[3.5rem] flex items-center justify-center shadow-[0_25px_60px_-10px_rgba(116,158,71,0.4)] relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 -translate-x-full animate-[sweep_4s_infinite]" />
                   <div className="relative z-10 text-white animate-[bookFlap_2s_infinite_ease-in-out]">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 md:h-24 md:w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                   </div>
-                  <div className="absolute top-4 right-4 text-white/40 text-xl animate-pulse">✨</div>
-                  <div className="absolute bottom-6 left-6 text-white/30 text-lg animate-pulse" style={{ animationDelay: '1.2s' }}>✨</div>
+                  <div className="absolute top-4 right-4 text-white/60 text-xl animate-pulse">🌿</div>
+                  <div className="absolute bottom-6 left-6 text-white/50 text-lg animate-pulse" style={{ animationDelay: '1.2s' }}>🌼</div>
                 </div>
               </div>
 
               <div className="text-center space-y-3 relative z-10 px-6">
                 <div className="h-12 overflow-hidden flex items-center justify-center">
-                  <p key={loadingMessageIdx} className="text-2xl md:text-3xl font-magic text-indigo-900 animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+                  <p key={loadingMessageIdx} className="text-2xl md:text-3xl font-script text-[#4a5d23] animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)]">
                     {t.loadingMessages[loadingMessageIdx]}
                   </p>
                 </div>
-                <p className="text-indigo-400 font-bold text-xs md:text-sm tracking-[0.2em] uppercase">
+                <p className="text-[#749e47] font-bold text-xs md:text-sm tracking-[0.2em] uppercase">
                   {t.waitMoment}
                 </p>
               </div>

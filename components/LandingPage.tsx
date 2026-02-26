@@ -11,36 +11,37 @@ interface Props {
 const LandingPage: React.FC<Props> = ({ onStart, language }) => {
   const t = translations[language];
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-indigo-500 to-purple-600 p-6">
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl p-10 text-center transform hover:scale-[1.01] transition-all">
-        <div className="text-7xl mb-6">✨📖✨</div>
-        <h1 className="text-4xl font-magic text-indigo-700 mb-4">Magic Dziulis</h1>
-        <p className="text-gray-600 mb-8 font-medium leading-relaxed">
+    <div className="min-h-screen flex items-center justify-center p-6 relative overflow-hidden">
+      {/* Background elements to simulate the garden */}
+      <div 
+        className="absolute inset-0 z-0 opacity-40 mix-blend-multiply pointer-events-none" 
+        style={{ 
+          background: "url('https://images.unsplash.com/photo-1490750967868-88aa4486c946?q=80&w=2000&auto=format&fit=crop') center/cover",
+          filter: "blur(4px)"
+        }} 
+      />
+      
+      <div className="max-w-md w-full bg-white/40 backdrop-blur-md rounded-[2.5rem] p-10 text-center relative z-10 transform hover:scale-[1.01] transition-all shadow-2xl">
+        <h1 className="text-5xl font-magic text-[#4a5d23] mb-2 tracking-tight">Magic Dziulis</h1>
+        
+        {/* Decorative divider */}
+        <div className="flex justify-center items-center gap-2 mb-8 text-[#749e47]">
+          <span className="w-8 h-[2px] bg-[#749e47] rounded-full opacity-30"></span>
+          <span className="w-2 h-2 bg-[#749e47] rounded-full opacity-50"></span>
+          <span className="w-8 h-[2px] bg-[#749e47] rounded-full opacity-30"></span>
+        </div>
+
+        <p className="text-[#4a5d23]/80 mb-8 font-medium leading-relaxed">
           {t.tagline}
         </p>
         
-        <div className="bg-indigo-50 rounded-2xl p-6 mb-8 text-left">
-          <p className="text-sm text-indigo-800 font-bold mb-2 flex items-center gap-2">
-            <span className="text-xl">💡</span> {language === 'lt' ? 'Prieš pradedant:' : 'Before you start:'}
-          </p>
-          <p className="text-sm text-indigo-600/80 leading-relaxed">
-            {t.billingNotice}
-          </p>
-          <a 
-            href="https://ai.google.dev/gemini-api/docs/billing" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="inline-block mt-3 text-xs font-bold text-indigo-500 hover:text-indigo-700 underline"
-          >
-            {t.billingLink}
-          </a>
-        </div>
-
         <button
           onClick={onStart}
-          className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-2xl shadow-lg transition-all hover:shadow-indigo-200 active:scale-95"
+          className="w-full bg-gradient-to-br from-[#9bbf6b] to-[#749e47] text-white font-magic text-2xl sm:text-3xl py-4 px-4 rounded-2xl transition-all flex flex-wrap items-center justify-center gap-2 mb-4 relative z-20 shadow-lg hover:shadow-xl active:scale-95 uppercase tracking-widest font-bold"
         >
-          {t.startButton}
+          <span className="text-xl opacity-80">🌿</span> 
+          <span className="tracking-wide leading-tight text-center">{t.startButton}</span> 
+          <span className="text-xl opacity-80">🌿</span>
         </button>
       </div>
     </div>
