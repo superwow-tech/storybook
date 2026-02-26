@@ -55,6 +55,12 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkKey = async () => {
+      // Check if API key is in environment variables
+      if (import.meta.env.VITE_GEMINI_API_KEY) {
+        setState(prev => ({ ...prev, apiKeySelected: true }));
+        return;
+      }
+
       // @ts-ignore
       const hasKey = await window.aistudio.hasSelectedApiKey();
       if (hasKey) setState(prev => ({ ...prev, apiKeySelected: true }));

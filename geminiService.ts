@@ -35,7 +35,11 @@ export async function decodeAudioData(
 
 export class GeminiService {
   private getAI() {
-    return new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+    if (!apiKey) {
+      throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
+    }
+    return new GoogleGenAI({ apiKey });
   }
 
   async generateStoryStructure(prompt: string, language: Language, pageCount: number = 5): Promise<Story> {
