@@ -25,7 +25,7 @@ export interface Story {
 }
 
 export interface AppState {
-  apiKeySelected: boolean;
+  hasStarted: boolean;
   isGenerating: boolean;
   currentStory: Story | null;
   currentPageIndex: number;

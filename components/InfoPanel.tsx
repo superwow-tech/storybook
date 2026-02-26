@@ -25,24 +25,24 @@ const InfoPanel: React.FC<Props> = ({ onClose, language }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] md:inset-auto md:bottom-6 md:right-6 md:w-[400px] md:h-[650px] flex flex-col bg-white/60 backdrop-blur-xl md:rounded-[2.5rem] shadow-2xl overflow-hidden animate-[popIn_0.4s_cubic-bezier(0.175,0.885,0.32,1.275)]">
-      <header className="bg-gradient-to-r from-[#749e47]/90 to-[#5b8e4d]/90 p-6 flex justify-between items-center shadow-lg backdrop-blur-md">
+    <div className="fixed inset-0 z-[100] md:inset-auto md:bottom-6 md:right-6 md:w-[400px] md:h-[650px] flex flex-col bg-white/60 backdrop-blur-xl md:rounded-[2.5rem] overflow-hidden animate-[popIn_0.4s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+      <header className="bg-transparent p-6 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-white/20 rounded-2xl flex items-center justify-center text-white shadow-inner backdrop-blur-sm">
+          <div className="w-11 h-11 bg-[#749e47]/10 rounded-2xl flex items-center justify-center text-[#749e47]">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h4 className="text-white font-magic text-2xl leading-tight tracking-wide">{t.infoTitle}</h4>
+          <h4 className="text-[#4a5d23] font-magic text-2xl leading-tight tracking-wide">{t.infoTitle}</h4>
         </div>
-        <button onClick={onClose} className="bg-white/10 hover:bg-white/20 p-2.5 rounded-2xl transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button onClick={onClose} className="bg-black/5 hover:bg-black/10 p-2.5 rounded-2xl transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#4a5d23]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide bg-white/20">
+      <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide bg-transparent">
         <section className="space-y-3">
           <h5 className="text-[#4a5d23] font-magic text-2xl tracking-wide">{t.howItWorksTitle}</h5>
           <p className="text-sm text-[#4a5d23]/80 leading-relaxed font-medium">
@@ -83,12 +83,12 @@ const InfoPanel: React.FC<Props> = ({ onClose, language }) => {
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               placeholder={t.feedbackPlaceholder}
-              className="w-full h-32 bg-white/40 backdrop-blur-sm rounded-2xl p-4 text-sm font-medium resize-none text-[#4a5d23] placeholder:text-[#4a5d23]/40 focus:outline-none focus:bg-white/60 transition-all"
+              className="w-full h-32 bg-white/40 backdrop-blur-sm rounded-2xl p-4 text-sm font-medium resize-none text-[#4a5d23] placeholder:text-[#4a5d23]/40 focus:outline-none focus:bg-white/60 transition-all border-none shadow-none"
             />
             <button 
               type="submit"
               disabled={sent || !feedback.trim()}
-              className={`w-full py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 shadow-md ${
+              className={`w-full py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
                 sent 
                   ? 'bg-green-500 text-white' 
                   : 'bg-[#749e47] hover:bg-[#5b8e4d] text-white'

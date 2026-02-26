@@ -99,19 +99,17 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language, savedStories, onLo
           </p>
           
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-8">
-            <div className={`group relative transition-all duration-500 rounded-[1.5rem] sm:rounded-[2.5rem] p-1 ${
-              isFocused ? 'bg-gradient-to-br from-[#9bbf6b] to-[#749e47] shadow-lg scale-[1.01]' : 'bg-white/20 hover:bg-white/30 backdrop-blur-md'
+            <div className={`group relative transition-all duration-500 rounded-[1.5rem] sm:rounded-[2.5rem] ${
+              isFocused ? 'bg-white/60 scale-[1.01]' : 'bg-white/40 hover:bg-white/50'
             }`}>
-              <div className="bg-white/40 backdrop-blur-xl rounded-[1.3rem] sm:rounded-[2.3rem] overflow-hidden shadow-inner">
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  placeholder={t.placeholder}
-                  className="w-full h-24 sm:h-32 bg-transparent p-4 sm:p-6 text-base sm:text-xl text-[#4a5d23] placeholder:text-[#4a5d23]/50 focus:outline-none resize-none font-medium leading-relaxed"
-                />
-              </div>
+              <textarea
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onFocus={() => setIsFocused(true)}
+                onBlur={() => setIsFocused(false)}
+                placeholder={t.placeholder}
+                className="w-full h-24 sm:h-32 bg-transparent p-6 text-base sm:text-xl text-[#4a5d23] placeholder:text-[#4a5d23]/50 focus:outline-none resize-none font-medium leading-relaxed"
+              />
             </div>
 
             <div className="flex flex-wrap gap-2 justify-center min-h-[80px] sm:min-h-[100px] px-1">

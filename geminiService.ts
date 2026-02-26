@@ -35,7 +35,7 @@ export async function decodeAudioData(
 
 export class GeminiService {
   private getAI() {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
     if (!apiKey) {
       throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
     }

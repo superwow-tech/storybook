@@ -12,7 +12,7 @@ const STORAGE_KEY = 'magic_dziulis_stories';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
-    apiKeySelected: false,
+    hasStarted: false,
     isGenerating: false,
     currentStory: null,
     currentPageIndex: 0,
@@ -53,25 +53,8 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [state.isGenerating, t.loadingMessages.length]);
 
-  useEffect(() => {
-    const checkKey = async () => {
-      // Check if API key is in environment variables
-      if (import.meta.env.VITE_GEMINI_API_KEY) {
-        setState(prev => ({ ...prev, apiKeySelected: true }));
-        return;
-      }
-
-      // @ts-ignore
-      const hasKey = await window.aistudio.hasSelectedApiKey();
-      if (hasKey) setState(prev => ({ ...prev, apiKeySelected: true }));
-    };
-    checkKey();
-  }, []);
-
   const handleStart = async () => {
-    // @ts-ignore
-    await window.aistudio.openSelectKey();
-    setState(prev => ({ ...prev, apiKeySelected: true }));
+    setState(prev => ({ ...prev, hasStarted: true }));
   };
 
   const handleReset = () => {
@@ -169,7 +152,7 @@ const App: React.FC = () => {
     }));
   };
 
-  if (!state.apiKeySelected) {
+  if (!state.hasStarted) {
     return <LandingPage onStart={handleStart} language={state.language} />;
   }
 
@@ -178,21 +161,19 @@ const App: React.FC = () => {
       <div className="absolute top-0 right-0 w-[50%] h-[40%] bg-green-100/40 blur-[120px] rounded-full pointer-events-none -z-10" />
       <div className="absolute bottom-0 left-0 w-[40%] h-[30%] bg-yellow-50/40 blur-[100px] rounded-full pointer-events-none -z-10" />
 
-      <header className="px-6 py-3 flex justify-between items-center bg-white/40 backdrop-blur-md rounded-b-[2.5rem] shadow-md fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-in-out -translate-y-[calc(100%-1.25rem)] hover:translate-y-0 hover:shadow-xl group/header">
-        <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 w-16 h-1 bg-[#4a5d23]/20 rounded-full group-hover/header:opacity-0 transition-opacity duration-300" />
-        
+      <header className="px-6 py-4 flex justify-between items-center bg-transparent fixed top-0 left-0 right-0 z-50">
         <div 
-          className="flex items-center gap-3 cursor-pointer group active:scale-95 transition-transform opacity-0 group-hover/header:opacity-100 duration-300"
+          className="flex items-center gap-3 cursor-pointer group active:scale-95 transition-transform"
           onClick={handleReset}
         >
-          <span className="text-2xl group-hover:rotate-12 transition-transform drop-shadow-sm">🌿</span>
+          <span className="text-2xl sm:text-3xl group-hover:rotate-12 transition-transform">🌿</span>
           <h1 className="text-2xl sm:text-3xl font-magic text-[#4a5d23] leading-none pt-1 tracking-tight">Magic Dziulis</h1>
         </div>
         
-        <div className="flex items-center gap-2 opacity-0 group-hover/header:opacity-100 duration-300">
+        <div className="flex items-center gap-2">
           <button 
             onClick={toggleLanguage}
-            className="w-10 h-10 bg-white/60 hover:bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:shadow-md active:scale-90 transition-all flex items-center justify-center font-bold text-[11px] uppercase tracking-wider text-[#4a5d23]"
+            className="w-10 h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center font-bold text-[11px] sm:text-xs uppercase tracking-wider text-[#4a5d23]"
             aria-label="Switch Language"
           >
             {state.language === 'en' ? 'LT' : 'EN'}
@@ -200,10 +181,10 @@ const App: React.FC = () => {
           
           <button 
             onClick={() => setShowInfo(!showInfo)}
-            className="w-10 h-10 bg-white/60 hover:bg-white/80 backdrop-blur-sm rounded-full shadow-sm hover:shadow-md active:scale-90 transition-all flex items-center justify-center"
+            className="w-10 h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center"
             aria-label="Informacija"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#4a5d23]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-[#4a5d23]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
