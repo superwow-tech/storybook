@@ -6,6 +6,7 @@ import LandingPage from './components/LandingPage';
 import StoryWizard from './components/StoryWizard';
 import StoryReader from './components/StoryReader';
 import InfoPanel from './components/InfoPanel';
+import Library from './components/Library';
 import { gemini } from './geminiService';
 
 const STORAGE_KEY = 'magic_dziulis_stories';
@@ -17,7 +18,8 @@ const App: React.FC = () => {
     currentStory: null,
     currentPageIndex: 0,
     language: 'lt',
-    savedStories: []
+    savedStories: [],
+    view: 'wizard'
   });
 
   const [showInfo, setShowInfo] = useState(false);
@@ -62,7 +64,8 @@ const App: React.FC = () => {
       ...prev,
       currentStory: null,
       currentPageIndex: 0,
-      isGenerating: false
+      isGenerating: false,
+      view: 'wizard'
     }));
   };
 
@@ -88,7 +91,8 @@ const App: React.FC = () => {
       setState(prev => ({ 
         ...prev, 
         currentStory: storyStructure, 
-        isGenerating: false 
+        isGenerating: false,
+        view: 'reader'
       }));
 
       loadRemainingPages(storyStructure);
@@ -141,7 +145,8 @@ const App: React.FC = () => {
       ...prev,
       currentStory: story,
       currentPageIndex: 0,
-      isGenerating: false
+      isGenerating: false,
+      view: 'reader'
     }));
   };
 
@@ -161,19 +166,30 @@ const App: React.FC = () => {
       <div className="absolute top-0 right-0 w-[50%] h-[40%] bg-green-100/40 blur-[120px] rounded-full pointer-events-none -z-10" />
       <div className="absolute bottom-0 left-0 w-[40%] h-[30%] bg-yellow-50/40 blur-[100px] rounded-full pointer-events-none -z-10" />
 
-      <header className="px-6 py-4 flex justify-between items-center bg-transparent fixed top-0 left-0 right-0 z-50">
+      <header className="px-4 py-3 sm:px-6 sm:py-4 flex justify-between items-center bg-white/20 backdrop-blur-xl fixed top-0 left-0 right-0 z-50 border-b border-white/10">
         <div 
-          className="flex items-center gap-3 cursor-pointer group active:scale-95 transition-transform"
+          className="flex items-center gap-2 cursor-pointer group active:scale-95 transition-transform"
           onClick={handleReset}
         >
-          <span className="text-2xl sm:text-3xl group-hover:rotate-12 transition-transform">🌿</span>
-          <h1 className="text-2xl sm:text-3xl font-magic text-[#4a5d23] leading-none pt-1 tracking-tight">Magic Dziulis</h1>
+          <h1 className="text-xl sm:text-3xl font-magic text-[#4a5d23] leading-none pt-1 tracking-tight">Magic Dziulis</h1>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          {state.hasStarted && !state.isGenerating && (
+            <button 
+              onClick={() => setState(prev => ({ ...prev, view: prev.view === 'library' ? 'wizard' : 'library', currentStory: null }))}
+              className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center text-[#4a5d23]"
+              aria-label="Library"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+              </svg>
+            </button>
+          )}
+          
           <button 
             onClick={toggleLanguage}
-            className="w-10 h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center font-bold text-[11px] sm:text-xs uppercase tracking-wider text-[#4a5d23]"
+            className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center font-bold text-[10px] sm:text-xs uppercase tracking-wider text-[#4a5d23]"
             aria-label="Switch Language"
           >
             {state.language === 'en' ? 'LT' : 'EN'}
@@ -181,7 +197,7 @@ const App: React.FC = () => {
           
           <button 
             onClick={() => setShowInfo(!showInfo)}
-            className="w-10 h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center"
+            className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center"
             aria-label="Informacija"
           >
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-[#4a5d23]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -191,15 +207,22 @@ const App: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 relative overflow-y-auto scrollbar-hide px-4 pt-12 pb-8 sm:py-6 md:px-8 flex flex-col items-center justify-start sm:justify-center">
+      <main className="flex-1 relative overflow-y-auto scrollbar-hide px-4 pt-20 pb-8 sm:pt-24 sm:pb-12 md:px-8 flex flex-col items-center justify-start sm:justify-center">
         <div className="w-full max-w-4xl flex flex-col items-center">
-          {!state.currentStory && !state.isGenerating && (
+          {state.view === 'wizard' && !state.isGenerating && (
             <StoryWizard 
               onGenerate={generateStory} 
               language={state.language} 
-              savedStories={state.savedStories}
+            />
+          )}
+
+          {state.view === 'library' && !state.isGenerating && (
+            <Library 
+              stories={state.savedStories}
               onLoadStory={loadSavedStory}
               onDeleteStory={deleteSavedStory}
+              language={state.language}
+              onClose={() => setState(prev => ({ ...prev, view: 'wizard' }))}
             />
           )}
 
@@ -249,7 +272,7 @@ const App: React.FC = () => {
             </div>
           )}
 
-          {state.currentStory && (
+          {state.view === 'reader' && state.currentStory && (
             <StoryReader 
               story={state.currentStory} 
               currentIndex={state.currentPageIndex}

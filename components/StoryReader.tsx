@@ -307,9 +307,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
                 onClick={onReset}
                 className="w-full flex items-center justify-center gap-2 py-3 rounded-[1.5rem] font-magic text-xl text-[#4a5d23] bg-white/80 hover:bg-white transition-all animate-[bounceIn_0.5s_ease-out] shadow-sm uppercase tracking-wide font-bold"
               >
-                <span className="text-lg">🌼</span>
                 <span>{t.oneMore}</span>
-                <span className="text-lg">🌼</span>
               </button>
             )}
           </div>

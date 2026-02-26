@@ -6,9 +6,6 @@ import { Language, Story } from '../types';
 interface Props {
   onGenerate: (prompt: string, pageCount: number) => void;
   language: Language;
-  savedStories: Story[];
-  onLoadStory: (story: Story) => void;
-  onDeleteStory: (id: string) => void;
 }
 
 interface SuggestionItem {
@@ -27,7 +24,7 @@ const COLORS = [
   "bg-stone-50 text-stone-800 border-stone-200"
 ];
 
-const StoryWizard: React.FC<Props> = ({ onGenerate, language, savedStories, onLoadStory, onDeleteStory }) => {
+const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
   const [prompt, setPrompt] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [pageCount, setPageCount] = useState(5);
@@ -158,53 +155,6 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language, savedStories, onLo
           </form>
         </div>
       </div>
-
-      {/* Bookshelf Section */}
-      {savedStories.length > 0 && (
-        <div className="w-full space-y-6 sm:space-y-8">
-          <div className="flex flex-col items-center gap-1.5 px-4">
-            <h3 className="text-2xl sm:text-4xl font-magic text-[#4a5d23] drop-shadow-sm tracking-tight">{t.bookshelfTitle}</h3>
-            <div className="w-16 h-[2px] bg-gradient-to-r from-transparent via-[#749e47] to-transparent opacity-30" />
-          </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-4">
-            {savedStories.map((story) => (
-              <div 
-                key={story.id} 
-                className="group bg-white/40 backdrop-blur-md rounded-[2rem] hover:shadow-xl transition-all duration-500 overflow-hidden flex flex-col p-3 relative hover:-translate-y-1 border border-white/30"
-              >
-                <div className="aspect-square bg-white/50 rounded-[1.5rem] overflow-hidden mb-3 border border-white/40 shadow-inner">
-                  {story.pages[0]?.imageUrl && (
-                    <img src={story.pages[0].imageUrl} alt={story.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
-                  )}
-                </div>
-                <div className="flex-1 min-h-[3.5rem] px-1">
-                  <h4 className="font-magic text-[#4a5d23] text-lg sm:text-xl line-clamp-2 mb-0.5 leading-tight tracking-tight">{story.title || 'Untitled'}</h4>
-                  <p className="text-[10px] text-[#4a5d23]/70 font-black uppercase tracking-widest opacity-80">{story.pages.length} {t.pages}</p>
-                </div>
-                
-                <div className="flex gap-2 mt-3 pt-3 border-t border-white/30">
-                  <button 
-                    onClick={() => onLoadStory(story)}
-                    className="flex-1 bg-[#749e47]/90 hover:bg-[#749e47] text-white py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all active:scale-95 shadow-sm backdrop-blur-sm"
-                  >
-                    {t.loadStory}
-                  </button>
-                  <button 
-                    onClick={() => onDeleteStory(story.id!)}
-                    className="bg-rose-50/80 text-rose-500 p-2 rounded-xl hover:bg-rose-100 transition-all border border-rose-100/50 active:scale-95 shadow-sm backdrop-blur-sm"
-                    aria-label={t.deleteStory}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                      <path fillRule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       <style>{`
         @keyframes slideUp {

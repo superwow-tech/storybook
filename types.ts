@@ -1,6 +1,8 @@
 
 export type Language = 'en' | 'lt';
 
+export type View = 'wizard' | 'reader' | 'library';
+
 export type SoundType = 'magic' | 'animal' | 'nature' | 'mechanical' | 'transport' | 'emotion';
 
 export interface SoundEffect {
@@ -31,4 +33,5 @@ export interface AppState {
   currentPageIndex: number;
   language: Language;
   savedStories: Story[];
+  view: View;
 }
