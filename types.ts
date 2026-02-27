@@ -34,4 +34,5 @@ export interface AppState {
   language: Language;
   savedStories: Story[];
   view: View;
+  loadingClicks?: number;
 }

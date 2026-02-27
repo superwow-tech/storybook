@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { get, set } from 'idb-keyval';
 import { AppState, Story, Language } from './types';
 import { translations } from './translations';
 import LandingPage from './components/LandingPage';
@@ -29,21 +30,33 @@ const App: React.FC = () => {
 
   // Load saved stories on mount
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setState(prev => ({ ...prev, savedStories: parsed }));
-      } catch (e) {
-        console.error("Failed to parse saved stories", e);
+    get(STORAGE_KEY).then((saved) => {
+      if (saved && Array.isArray(saved)) {
+        setState(prev => ({ ...prev, savedStories: saved }));
+      } else {
+        // Fallback to localStorage if they have old data
+        const oldSaved = localStorage.getItem(STORAGE_KEY);
+        if (oldSaved) {
+          try {
+            const parsed = JSON.parse(oldSaved);
+            setState(prev => ({ ...prev, savedStories: parsed }));
+            set(STORAGE_KEY, parsed); // Migrate to IndexedDB
+            localStorage.removeItem(STORAGE_KEY); // Clean up
+          } catch (e) {
+            console.error("Failed to parse old saved stories", e);
+          }
+        }
       }
-    }
+    }).catch(err => console.error("Failed to load stories from IndexedDB", err));
   }, []);
 
   // Persist saved stories whenever they change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.savedStories));
-  }, [state.savedStories]);
+    // Only save if we have actually loaded or modified stories
+    if (state.hasStarted || state.savedStories.length > 0) {
+      set(STORAGE_KEY, state.savedStories).catch(err => console.error("Failed to save stories to IndexedDB", err));
+    }
+  }, [state.savedStories, state.hasStarted]);
 
   useEffect(() => {
     let interval: any;
@@ -92,7 +105,8 @@ const App: React.FC = () => {
         ...prev, 
         currentStory: storyStructure, 
         isGenerating: false,
-        view: 'reader'
+        view: 'reader',
+        savedStories: [storyStructure, ...prev.savedStories].slice(0, 12)
       }));
 
       loadRemainingPages(storyStructure);
@@ -162,23 +176,30 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="h-full flex flex-col relative overflow-hidden bg-transparent">
-      <div className="absolute top-0 right-0 w-[50%] h-[40%] bg-green-100/40 blur-[120px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute bottom-0 left-0 w-[40%] h-[30%] bg-yellow-50/40 blur-[100px] rounded-full pointer-events-none -z-10" />
+    <div className="h-full flex flex-col relative overflow-hidden bg-[#0B1026]">
+      <div className="absolute top-0 right-0 w-[50%] h-[40%] bg-[#312e81]/40 blur-[120px] rounded-full pointer-events-none -z-10" />
+      <div className="absolute bottom-0 left-0 w-[40%] h-[30%] bg-[#4c1d95]/40 blur-[100px] rounded-full pointer-events-none -z-10" />
 
-      <header className="px-4 py-3 sm:px-6 sm:py-4 flex justify-between items-center bg-white/20 backdrop-blur-xl fixed top-0 left-0 right-0 z-50 border-b border-white/10">
+      <header className="px-4 py-3 sm:px-6 sm:py-4 flex justify-between items-center bg-[#0B1026]/60 backdrop-blur-xl fixed top-0 left-0 right-0 z-50 border-b border-[#6B7FD7]/20">
         <div 
-          className="flex items-center gap-2 cursor-pointer group active:scale-95 transition-transform"
+          className="flex items-center gap-3 cursor-pointer group active:scale-95 transition-transform"
           onClick={handleReset}
         >
-          <h1 className="text-xl sm:text-3xl font-magic text-[#4a5d23] leading-none pt-1 tracking-tight">Magic Dziulis</h1>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-[0_0_10px_rgba(244,211,94,0.5)] filter hover:brightness-110 transition-all">
+            <path d="M496.1 416h-27.2c-12.9 0-24.6-7.8-29.6-19.8l-15.5-37.1C412.2 331.3 367.8 248.8 306.6 128c-3.2-6.4-23.7-58.6-23.7-58.6s-9.8-23.2-16.1-23.2h-21.6c-6.3 0-16.1 23.2-16.1 23.2S208.6 121.6 205.4 128c-61.2 120.8-105.6 203.3-117.2 231.1l-15.5 37.1c-5 12-16.7 19.8-29.6 19.8H15.9c-10.8 0-18.7 10.3-15.5 20.6l10.8 34.6c2.4 7.6 9.4 12.8 17.4 12.8h454.8c8 0 15-5.2 17.4-12.8l10.8-34.6c3.2-10.3-4.7-20.6-15.5-20.6z" fill="#4338ca"/>
+            <path d="M336.6 362.3c-15.8 12.5-35.7 19.8-57.1 19.8-23.5 0-45.1-8.8-61.6-23.3l-20.3 48.6c19.7 20.6 47.6 33.6 78.4 33.6 33.3 0 63.2-15.2 82.8-39.1l-22.2-39.6z" fill="#F4D35E"/>
+            <path d="M256 160l-17.9 36.3-40.1 5.8 29 28.3-6.8 39.9 35.8-18.8 35.8 18.8-6.8-39.9 29-28.3-40.1-5.8L256 160z" fill="#F4D35E"/>
+            <circle cx="180" cy="280" r="12" fill="#F4D35E"/>
+            <circle cx="340" cy="250" r="8" fill="#F4D35E"/>
+          </svg>
+          <h1 className="text-xl sm:text-3xl font-magic text-[#F5E6CA] leading-none pt-1 tracking-tight drop-shadow-md">Magic Dziulis</h1>
         </div>
         
         <div className="flex items-center gap-1 sm:gap-2">
           {state.hasStarted && !state.isGenerating && (
             <button 
               onClick={() => setState(prev => ({ ...prev, view: prev.view === 'library' ? 'wizard' : 'library', currentStory: null }))}
-              className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center text-[#4a5d23]"
+              className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-[#2B3A67]/50 rounded-full transition-all flex items-center justify-center text-[#F5E6CA]"
               aria-label="Library"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -189,7 +210,7 @@ const App: React.FC = () => {
           
           <button 
             onClick={toggleLanguage}
-            className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center font-bold text-[10px] sm:text-xs uppercase tracking-wider text-[#4a5d23]"
+            className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-[#2B3A67]/50 rounded-full transition-all flex items-center justify-center font-bold text-[10px] sm:text-xs uppercase tracking-wider text-[#F5E6CA]"
             aria-label="Switch Language"
           >
             {state.language === 'en' ? 'LT' : 'EN'}
@@ -197,10 +218,10 @@ const App: React.FC = () => {
           
           <button 
             onClick={() => setShowInfo(!showInfo)}
-            className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-white/40 rounded-full transition-all flex items-center justify-center"
+            className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-[#2B3A67]/50 rounded-full transition-all flex items-center justify-center"
             aria-label="Informacija"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-[#4a5d23]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-[#F5E6CA]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </button>
@@ -228,44 +249,45 @@ const App: React.FC = () => {
 
           {state.isGenerating && (
             <div className="flex flex-col items-center justify-center w-full max-w-lg relative py-12">
-              <div className="absolute inset-0 pointer-events-none">
-                {[...Array(15)].map((_, i) => (
+              <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                {[...Array(15 + (state.loadingClicks || 0) * 2)].map((_, i) => (
                   <div
                     key={i}
-                    className="absolute bg-[#9bbf6b] rounded-full animate-[floatUp_6s_infinite_ease-in-out]"
+                    className="absolute bg-[#F4D35E] rounded-full animate-[floatUp_6s_infinite_ease-in-out] shadow-[0_0_10px_#F4D35E]"
                     style={{
-                      width: Math.random() * 8 + 4 + 'px',
-                      height: Math.random() * 8 + 4 + 'px',
+                      width: Math.random() * 6 + 2 + 'px',
+                      height: Math.random() * 6 + 2 + 'px',
                       left: Math.random() * 100 + '%',
                       bottom: '-10%',
                       animationDelay: Math.random() * 5 + 's',
-                      opacity: Math.random() * 0.5 + 0.2
+                      opacity: Math.random() * 0.5 + 0.4
                     }}
                   />
                 ))}
               </div>
 
               <div className="relative mb-10">
-                <div className="absolute -inset-10 bg-[#9bbf6b]/20 blur-[60px] rounded-full animate-pulse" />
-                <div className="w-36 h-36 md:w-44 md:h-44 bg-gradient-to-br from-[#9bbf6b] to-[#749e47] rounded-[3.5rem] flex items-center justify-center shadow-[0_25px_60px_-10px_rgba(116,158,71,0.4)] relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-white/20 to-white/0 -translate-x-full animate-[sweep_4s_infinite]" />
-                  <div className="relative z-10 text-white animate-[bookFlap_2s_infinite_ease-in-out]">
+                <div className="absolute -inset-10 bg-[#4338ca]/30 blur-[60px] rounded-full animate-pulse" />
+                <button 
+                  onClick={() => setState(prev => ({ ...prev, loadingClicks: (prev.loadingClicks || 0) + 1 }))}
+                  className="w-36 h-36 md:w-44 md:h-44 bg-gradient-to-br from-[#1e1b4b] to-[#312e81] border border-[#6B7FD7]/30 rounded-[3.5rem] flex items-center justify-center shadow-[0_25px_60px_-10px_rgba(43,58,103,0.5)] relative overflow-hidden group active:scale-95 transition-transform cursor-pointer"
+                >
+                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-[#F4D35E]/10 to-white/0 -translate-x-full animate-[sweep_4s_infinite]" />
+                  <div className="relative z-10 text-[#F5E6CA] animate-[bookFlap_2s_infinite_ease-in-out] drop-shadow-[0_0_15px_rgba(244,211,94,0.3)]">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 md:h-24 md:w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
                   </div>
-                  <div className="absolute top-4 right-4 text-white/60 text-xl animate-pulse">🌿</div>
-                  <div className="absolute bottom-6 left-6 text-white/50 text-lg animate-pulse" style={{ animationDelay: '1.2s' }}>🌼</div>
-                </div>
+                </button>
               </div>
 
               <div className="text-center space-y-3 relative z-10 px-6">
                 <div className="h-12 overflow-hidden flex items-center justify-center">
-                  <p key={loadingMessageIdx} className="text-2xl md:text-3xl font-script text-[#4a5d23] animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+                  <p key={loadingMessageIdx} className="text-2xl md:text-3xl font-script text-[#F5E6CA] animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)] drop-shadow-md">
                     {t.loadingMessages[loadingMessageIdx]}
                   </p>
                 </div>
-                <p className="text-[#749e47] font-bold text-xs md:text-sm tracking-[0.2em] uppercase">
+                <p className="text-[#F4D35E] font-bold text-xs md:text-sm tracking-[0.2em] uppercase drop-shadow-sm">
                   {t.waitMoment}
                 </p>
               </div>

@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { translations } from '../translations';
-import { Language, Story } from '../types';
+import { Language } from '../types';
 
 interface Props {
   onGenerate: (prompt: string, pageCount: number) => void;
@@ -15,13 +15,10 @@ interface SuggestionItem {
 }
 
 const COLORS = [
-  "bg-green-50 text-green-800 border-green-200",
-  "bg-yellow-50 text-yellow-800 border-yellow-200",
-  "bg-rose-50 text-rose-800 border-rose-200",
-  "bg-orange-50 text-orange-800 border-orange-200",
-  "bg-blue-50 text-blue-800 border-blue-200",
-  "bg-teal-50 text-teal-800 border-teal-200",
-  "bg-stone-50 text-stone-800 border-stone-200"
+  "bg-[#2B3A67]/60 text-[#F5E6CA] border-[#6B7FD7]/30",
+  "bg-[#1e1b4b]/60 text-[#F5E6CA] border-[#6B7FD7]/30",
+  "bg-[#312e81]/60 text-[#F5E6CA] border-[#6B7FD7]/30",
+  "bg-[#4c1d95]/60 text-[#F5E6CA] border-[#6B7FD7]/30",
 ];
 
 const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
@@ -84,20 +81,20 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
   return (
     <div className="w-full max-w-4xl space-y-6 sm:space-y-8 animate-[slideUp_0.5s_cubic-bezier(0.16,1,0.3,1)] py-2 sm:py-4">
       <div className="max-w-lg mx-auto relative">
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-white/20 blur-[80px] rounded-full pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-yellow-200/20 blur-[80px] rounded-full pointer-events-none" />
+        <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#312e81]/20 blur-[80px] rounded-full pointer-events-none" />
+        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-[#4c1d95]/20 blur-[80px] rounded-full pointer-events-none" />
 
         <div className="relative z-10 text-center px-4">
-          <h2 className="text-3xl md:text-5xl font-magic mb-3 text-[#4a5d23] leading-tight drop-shadow-sm tracking-tight">
+          <h2 className="text-3xl md:text-5xl font-magic mb-3 text-[#F5E6CA] leading-tight drop-shadow-md tracking-tight">
             {t.wizardTitle}
           </h2>
-          <p className="text-[#4a5d23] font-bold mb-6 sm:mb-8 text-[10px] sm:text-[11px] tracking-[0.15em] uppercase opacity-90 drop-shadow-sm">
+          <p className="text-[#A39BA8] font-bold mb-6 sm:mb-8 text-[10px] sm:text-[11px] tracking-[0.15em] uppercase opacity-90 drop-shadow-sm">
             {t.wizardSub}
           </p>
           
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-8">
-            <div className={`group relative transition-all duration-500 rounded-[1.5rem] sm:rounded-[2.5rem] ${
-              isFocused ? 'bg-white/60 scale-[1.01]' : 'bg-white/40 hover:bg-white/50'
+            <div className={`group relative transition-all duration-500 rounded-[1.5rem] sm:rounded-[2.5rem] border border-[#6B7FD7]/20 ${
+              isFocused ? 'bg-[#0B1026]/60 scale-[1.01] shadow-[0_0_30px_rgba(107,127,215,0.2)]' : 'bg-[#0B1026]/40 hover:bg-[#0B1026]/50'
             }`}>
               <textarea
                 value={prompt}
@@ -105,7 +102,7 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 placeholder={t.placeholder}
-                className="w-full h-24 sm:h-32 bg-transparent p-6 text-base sm:text-xl text-[#4a5d23] placeholder:text-[#4a5d23]/50 focus:outline-none resize-none font-medium leading-relaxed"
+                className="w-full h-24 sm:h-32 bg-transparent p-6 text-base sm:text-xl text-[#F5E6CA] placeholder:text-[#A39BA8]/50 focus:outline-none resize-none font-medium leading-relaxed"
               />
             </div>
 
@@ -115,7 +112,7 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
                   key={s.id}
                   type="button"
                   onClick={() => setPrompt(s.text)}
-                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-[12px] font-bold transition-all hover:scale-105 active:scale-95 ${s.color.replace('bg-', 'bg-opacity-80 bg-')} shadow-sm hover:shadow-md animate-[popIn_0.4s_ease-out] backdrop-blur-sm`}
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-[12px] font-bold transition-all hover:scale-105 active:scale-95 ${s.color} shadow-sm hover:shadow-md animate-[popIn_0.4s_ease-out] backdrop-blur-sm border border-white/5`}
                 >
                   {s.text}
                 </button>
@@ -123,10 +120,10 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
             </div>
 
             <div className="space-y-3 sm:space-y-4">
-              <label className="text-[10px] font-black text-[#4a5d23] uppercase tracking-[0.2em] block opacity-80 drop-shadow-sm">
+              <label className="text-[10px] font-black text-[#F4D35E] uppercase tracking-[0.2em] block opacity-80 drop-shadow-sm">
                 {t.storyLength}
               </label>
-              <div className="bg-white/30 backdrop-blur-md p-1.5 rounded-[1.5rem] sm:rounded-[2rem] flex justify-between gap-1.5 shadow-sm">
+              <div className="bg-[#0B1026]/40 backdrop-blur-md p-1.5 rounded-[1.5rem] sm:rounded-[2rem] flex justify-between gap-1.5 shadow-inner border border-[#6B7FD7]/20">
                 {pageOptions.map((opt) => (
                   <button
                     key={opt}
@@ -134,8 +131,8 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
                     onClick={() => setPageCount(opt)}
                     className={`flex-1 py-2 sm:py-3 px-1.5 rounded-[1.3rem] sm:rounded-[1.8rem] font-black transition-all duration-300 flex flex-col items-center justify-center gap-0.5 ${
                       pageCount === opt
-                        ? 'bg-white/80 backdrop-blur-sm text-[#4a5d23] shadow-md scale-105'
-                        : 'text-[#4a5d23]/70 hover:text-[#4a5d23] hover:bg-white/20'
+                        ? 'bg-[#F4D35E] text-[#0B1026] shadow-[0_0_15px_rgba(244,211,94,0.4)] scale-105'
+                        : 'text-[#A39BA8] hover:text-[#F5E6CA] hover:bg-white/5'
                     }`}
                   >
                     <span className="text-sm sm:text-base leading-none">{opt}</span>
@@ -148,7 +145,7 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
             <button
               type="submit"
               disabled={!prompt.trim()}
-              className="w-full bg-gradient-to-br from-[#9bbf6b] to-[#749e47] text-white font-magic text-xl sm:text-2xl py-3 sm:py-4 rounded-[1.5rem] sm:rounded-[2.5rem] transition-all hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:grayscale disabled:scale-100 shadow-lg hover:shadow-xl mt-2 uppercase tracking-widest font-bold backdrop-blur-sm"
+              className="w-full bg-gradient-to-br from-[#F4D35E] to-[#D4AF37] text-[#0B1026] font-magic text-xl sm:text-2xl py-3 sm:py-4 rounded-[1.5rem] sm:rounded-[2.5rem] transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:grayscale disabled:scale-100 shadow-[0_0_20px_rgba(244,211,94,0.3)] hover:shadow-[0_0_30px_rgba(244,211,94,0.5)] mt-2 uppercase tracking-widest font-bold backdrop-blur-sm"
             >
               {t.createButton}
             </button>

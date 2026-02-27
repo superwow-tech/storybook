@@ -15,35 +15,45 @@ const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, languag
   const t = translations[language];
 
   return (
-    <div className="w-full max-w-5xl mx-auto px-4 py-8 space-y-8 animate-[fadeIn_0.5s_ease-out]">
-      <div className="flex flex-col items-center gap-4 text-center">
-        <div className="flex items-center gap-4">
-          <button 
-            onClick={onClose}
-            className="w-10 h-10 bg-white/40 hover:bg-white/60 rounded-full flex items-center justify-center text-[#4a5d23] transition-all active:scale-90"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <h2 className="text-4xl sm:text-6xl font-magic text-[#4a5d23] tracking-tight">{t.bookshelfTitle}</h2>
+    <div className="w-full max-w-5xl mx-auto px-4 py-4 sm:py-8 space-y-6 sm:space-y-8 animate-[fadeIn_0.5s_ease-out]">
+      <div className="relative flex flex-col items-center justify-center pt-2 sm:pt-0">
+        <button 
+          onClick={onClose}
+          className="absolute left-0 top-2 sm:top-1/2 sm:-translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-[#2B3A67]/50 hover:bg-[#2B3A67]/80 rounded-full flex items-center justify-center text-[#F5E6CA] transition-all active:scale-90 z-10 border border-[#6B7FD7]/30"
+          aria-label={t.back}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
+        
+        <div className="flex flex-col items-center gap-2 pt-12 sm:pt-0 w-full">
+          <h2 className="text-3xl sm:text-6xl font-magic text-[#F5E6CA] tracking-tight text-center leading-tight px-8 drop-shadow-lg">
+            {t.bookshelfTitle}
+          </h2>
+          <p className="text-[#A39BA8] font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs drop-shadow-sm">
+            {stories.length} {stories.length === 1 ? 'STORY' : 'STORIES'} SAVED
+          </p>
         </div>
-        <p className="text-[#4a5d23]/60 font-bold uppercase tracking-[0.2em] text-xs">
-          {stories.length} {stories.length === 1 ? 'STORY' : 'STORIES'} SAVED
-        </p>
       </div>
 
       {stories.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center space-y-4">
-          <div className="text-6xl opacity-20">📚</div>
-          <p className="text-[#4a5d23]/60 font-medium text-lg max-w-xs mx-auto">
-            {t.noStories}
-          </p>
+        <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-center space-y-6 min-h-[50vh]">
+          <div className="text-6xl sm:text-7xl opacity-20 animate-bounce grayscale brightness-200">📚</div>
+          <div className="space-y-2 max-w-xs mx-auto">
+            <p className="text-[#F5E6CA] font-magic text-2xl">
+              {t.emptyLibraryTitle || "It's quiet here..."}
+            </p>
+            <p className="text-[#A39BA8] font-medium text-sm sm:text-base">
+              {t.noStories}
+            </p>
+          </div>
           <button 
             onClick={onClose}
-            className="bg-[#749e47] text-white px-8 py-3 rounded-2xl font-bold shadow-lg hover:shadow-xl transition-all active:scale-95"
+            className="bg-gradient-to-br from-[#F4D35E] to-[#D4AF37] text-[#0B1026] px-8 py-3 sm:px-10 sm:py-4 rounded-2xl font-bold shadow-[0_0_20px_rgba(244,211,94,0.3)] hover:shadow-[0_0_30px_rgba(244,211,94,0.5)] transition-all active:scale-95 flex items-center gap-2 group mt-4 uppercase tracking-widest"
           >
-            {t.createButton}
+            <span className="text-xl group-hover:rotate-12 transition-transform">✨</span>
+            <span>{t.createButton}</span>
           </button>
         </div>
       ) : (
@@ -51,9 +61,10 @@ const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, languag
           {stories.map((story) => (
             <div 
               key={story.id} 
-              className="group bg-white/40 backdrop-blur-md rounded-[2.5rem] hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col p-4 relative hover:-translate-y-2 border border-white/30"
+              onClick={() => onLoadStory(story)}
+              className="group bg-[#0B1026]/60 backdrop-blur-md rounded-[2.5rem] hover:shadow-[0_0_30px_rgba(107,127,215,0.2)] transition-all duration-500 overflow-hidden flex flex-col p-4 relative hover:-translate-y-2 border border-[#6B7FD7]/20 cursor-pointer"
             >
-              <div className="aspect-[4/3] bg-white/50 rounded-[2rem] overflow-hidden mb-4 border border-white/40 shadow-inner relative">
+              <div className="aspect-[4/3] bg-[#1e1b4b]/50 rounded-[2rem] overflow-hidden mb-4 border border-[#6B7FD7]/20 shadow-inner relative">
                 {story.pages[0]?.imageUrl && (
                   <img 
                     src={story.pages[0].imageUrl} 
@@ -61,30 +72,30 @@ const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, languag
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
                   />
                 )}
-                <div className="absolute top-3 right-3 bg-white/80 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-[#4a5d23] shadow-sm">
+                <div className="absolute top-3 right-3 bg-[#0B1026]/80 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-[#F4D35E] shadow-sm border border-[#6B7FD7]/30">
                   {story.pages.length} {t.pages}
                 </div>
               </div>
               
               <div className="flex-1 px-2 space-y-1">
-                <h4 className="font-magic text-[#4a5d23] text-2xl line-clamp-2 leading-tight tracking-tight">
+                <h4 className="font-magic text-[#F5E6CA] text-2xl line-clamp-2 leading-tight tracking-tight drop-shadow-sm">
                   {story.title || 'Untitled'}
                 </h4>
-                <p className="text-[10px] text-[#4a5d23]/50 font-black uppercase tracking-widest">
+                <p className="text-[10px] text-[#A39BA8] font-black uppercase tracking-widest opacity-70">
                   {story.timestamp ? new Date(story.timestamp).toLocaleDateString(language === 'lt' ? 'lt-LT' : 'en-US') : ''}
                 </p>
               </div>
               
               <div className="flex gap-3 mt-6">
-                <button 
-                  onClick={() => onLoadStory(story)}
-                  className="flex-1 bg-gradient-to-br from-[#9bbf6b] to-[#749e47] text-white py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-md hover:shadow-lg"
-                >
+                <div className="flex-1 bg-gradient-to-br from-[#F4D35E] to-[#D4AF37] text-[#0B1026] py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-md hover:shadow-lg text-center hover:brightness-110">
                   {t.loadStory}
-                </button>
+                </div>
                 <button 
-                  onClick={() => onDeleteStory(story.id!)}
-                  className="bg-rose-50/80 text-rose-500 p-3 rounded-2xl hover:bg-rose-100 transition-all border border-rose-100/50 active:scale-95 shadow-sm"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDeleteStory(story.id!);
+                  }}
+                  className="bg-rose-900/40 text-rose-300 p-3 rounded-2xl hover:bg-rose-900/60 transition-all border border-rose-500/20 active:scale-95 shadow-sm relative z-10"
                   aria-label={t.deleteStory}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
