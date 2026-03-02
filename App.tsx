@@ -11,6 +11,7 @@ import Library from './components/Library';
 import { gemini } from './geminiService';
 
 const STORAGE_KEY = 'magic_dziulis_stories';
+const CURRENT_STORY_KEY = 'magic_dziulis_current_story';
 
 const App: React.FC = () => {
   const [state, setState] = useState<AppState>({
@@ -20,43 +21,48 @@ const App: React.FC = () => {
     currentPageIndex: 0,
     language: 'lt',
     savedStories: [],
-    view: 'wizard'
+    view: 'wizard',
+    theme: 'dark'
   });
 
   const [showInfo, setShowInfo] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [loadingMessageIdx, setLoadingMessageIdx] = useState(0);
 
   const t = translations[state.language];
 
-  // Load saved stories on mount
+  // Load saved stories and current story on mount
   useEffect(() => {
-    get(STORAGE_KEY).then((saved) => {
-      if (saved && Array.isArray(saved)) {
-        setState(prev => ({ ...prev, savedStories: saved }));
-      } else {
-        // Fallback to localStorage if they have old data
-        const oldSaved = localStorage.getItem(STORAGE_KEY);
-        if (oldSaved) {
-          try {
-            const parsed = JSON.parse(oldSaved);
-            setState(prev => ({ ...prev, savedStories: parsed }));
-            set(STORAGE_KEY, parsed); // Migrate to IndexedDB
-            localStorage.removeItem(STORAGE_KEY); // Clean up
-          } catch (e) {
-            console.error("Failed to parse old saved stories", e);
-          }
-        }
-      }
-    }).catch(err => console.error("Failed to load stories from IndexedDB", err));
+    Promise.all([
+      get(STORAGE_KEY),
+      get(CURRENT_STORY_KEY)
+    ]).then(([saved, current]) => {
+      setState(prev => ({
+        ...prev,
+        savedStories: Array.isArray(saved) ? saved : [],
+        currentStory: current || null,
+        // If we have a current story but haven't started, maybe we should auto-start or show a "continue" option?
+        // For now, let's just load it into state.
+      }));
+    }).catch(err => console.error("Failed to load data from IndexedDB", err));
   }, []);
 
   // Persist saved stories whenever they change
   useEffect(() => {
-    // Only save if we have actually loaded or modified stories
     if (state.hasStarted || state.savedStories.length > 0) {
-      set(STORAGE_KEY, state.savedStories).catch(err => console.error("Failed to save stories to IndexedDB", err));
+      set(STORAGE_KEY, state.savedStories).catch(err => console.error("Failed to save stories", err));
     }
   }, [state.savedStories, state.hasStarted]);
+
+  // Persist current story whenever it changes
+  useEffect(() => {
+    if (state.currentStory) {
+      set(CURRENT_STORY_KEY, state.currentStory).catch(err => console.error("Failed to save current story", err));
+    } else if (state.hasStarted) {
+      // Only clear if we have started (to avoid clearing on initial empty render)
+      set(CURRENT_STORY_KEY, null).catch(err => console.error("Failed to clear current story", err));
+    }
+  }, [state.currentStory, state.hasStarted]);
 
   useEffect(() => {
     let interval: any;
@@ -89,6 +95,13 @@ const App: React.FC = () => {
     }));
   };
 
+  const toggleTheme = () => {
+    setState(prev => ({
+      ...prev,
+      theme: prev.theme === 'dark' ? 'light' : 'dark'
+    }));
+  };
+
   const generateStory = async (userPrompt: string, pageCount: number) => {
     setState(prev => ({ ...prev, isGenerating: true, currentStory: null, currentPageIndex: 0 }));
     try {
@@ -105,8 +118,7 @@ const App: React.FC = () => {
         ...prev, 
         currentStory: storyStructure, 
         isGenerating: false,
-        view: 'reader',
-        savedStories: [storyStructure, ...prev.savedStories].slice(0, 12)
+        view: 'reader'
       }));
 
       loadRemainingPages(storyStructure);
@@ -149,7 +161,7 @@ const App: React.FC = () => {
       if (alreadyExists) return prev;
       return {
         ...prev,
-        savedStories: [story, ...prev.savedStories].slice(0, 12) // Keep last 12 stories
+        savedStories: [story, ...prev.savedStories]
       };
     });
   };
@@ -172,34 +184,37 @@ const App: React.FC = () => {
   };
 
   if (!state.hasStarted) {
-    return <LandingPage onStart={handleStart} language={state.language} />;
+    return <LandingPage onStart={handleStart} language={state.language} theme={state.theme} />;
   }
 
-  return (
-    <div className="h-full flex flex-col relative overflow-hidden bg-[#0B1026]">
-      <div className="absolute top-0 right-0 w-[50%] h-[40%] bg-[#312e81]/40 blur-[120px] rounded-full pointer-events-none -z-10" />
-      <div className="absolute bottom-0 left-0 w-[40%] h-[30%] bg-[#4c1d95]/40 blur-[100px] rounded-full pointer-events-none -z-10" />
+  const isDark = state.theme === 'dark';
 
-      <header className="px-4 py-3 sm:px-6 sm:py-4 flex justify-between items-center bg-[#0B1026]/60 backdrop-blur-xl fixed top-0 left-0 right-0 z-50 border-b border-[#6B7FD7]/20">
+  return (
+    <div className={`h-full flex flex-col relative overflow-hidden transition-colors duration-1000 ${isDark ? 'bg-gradient-to-b from-[#0B0F19] via-[#1A1B41] to-[#2E2A5B]' : 'bg-gradient-to-b from-[#BFDBFE] via-[#D1FAE5] to-[#86EFAC]'}`}>
+      {/* Background Blobs */}
+      <div className={`absolute top-0 right-0 w-[80%] h-[70%] blur-[130px] rounded-full pointer-events-none -z-10 transition-colors duration-1000 ${isDark ? 'bg-[#4C1D95]/30' : 'bg-[#7DD3FC]/50'}`} />
+      <div className={`absolute bottom-0 left-0 w-[80%] h-[70%] blur-[130px] rounded-full pointer-events-none -z-10 transition-colors duration-1000 ${isDark ? 'bg-[#1D4ED8]/30' : 'bg-[#6EE7B7]/50'}`} />
+
+      <header className={`px-4 py-3 sm:px-6 sm:py-4 flex justify-between items-center backdrop-blur-xl fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${isDark ? 'bg-[#1A1B41]/50' : 'bg-white/40'}`}>
         <div 
           className="flex items-center gap-3 cursor-pointer group active:scale-95 transition-transform"
           onClick={handleReset}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className="w-8 h-8 sm:w-10 sm:h-10 drop-shadow-[0_0_10px_rgba(244,211,94,0.5)] filter hover:brightness-110 transition-all">
-            <path d="M496.1 416h-27.2c-12.9 0-24.6-7.8-29.6-19.8l-15.5-37.1C412.2 331.3 367.8 248.8 306.6 128c-3.2-6.4-23.7-58.6-23.7-58.6s-9.8-23.2-16.1-23.2h-21.6c-6.3 0-16.1 23.2-16.1 23.2S208.6 121.6 205.4 128c-61.2 120.8-105.6 203.3-117.2 231.1l-15.5 37.1c-5 12-16.7 19.8-29.6 19.8H15.9c-10.8 0-18.7 10.3-15.5 20.6l10.8 34.6c2.4 7.6 9.4 12.8 17.4 12.8h454.8c8 0 15-5.2 17.4-12.8l10.8-34.6c3.2-10.3-4.7-20.6-15.5-20.6z" fill="#4338ca"/>
-            <path d="M336.6 362.3c-15.8 12.5-35.7 19.8-57.1 19.8-23.5 0-45.1-8.8-61.6-23.3l-20.3 48.6c19.7 20.6 47.6 33.6 78.4 33.6 33.3 0 63.2-15.2 82.8-39.1l-22.2-39.6z" fill="#F4D35E"/>
-            <path d="M256 160l-17.9 36.3-40.1 5.8 29 28.3-6.8 39.9 35.8-18.8 35.8 18.8-6.8-39.9 29-28.3-40.1-5.8L256 160z" fill="#F4D35E"/>
-            <circle cx="180" cy="280" r="12" fill="#F4D35E"/>
-            <circle cx="340" cy="250" r="8" fill="#F4D35E"/>
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className={`w-8 h-8 sm:w-10 sm:h-10 filter hover:brightness-110 transition-all ${isDark ? 'drop-shadow-[0_0_10px_rgba(252,211,77,0.5)]' : 'drop-shadow-md'}`}>
+            <path d="M496.1 416h-27.2c-12.9 0-24.6-7.8-29.6-19.8l-15.5-37.1C412.2 331.3 367.8 248.8 306.6 128c-3.2-6.4-23.7-58.6-23.7-58.6s-9.8-23.2-16.1-23.2h-21.6c-6.3 0-16.1 23.2-16.1 23.2S208.6 121.6 205.4 128c-61.2 120.8-105.6 203.3-117.2 231.1l-15.5 37.1c-5 12-16.7 19.8-29.6 19.8H15.9c-10.8 0-18.7 10.3-15.5 20.6l10.8 34.6c2.4 7.6 9.4 12.8 17.4 12.8h454.8c8 0 15-5.2 17.4-12.8l10.8-34.6c3.2-10.3-4.7-20.6-15.5-20.6z" fill={isDark ? "#3730A3" : "#3B82F6"}/>
+            <path d="M336.6 362.3c-15.8 12.5-35.7 19.8-57.1 19.8-23.5 0-45.1-8.8-61.6-23.3l-20.3 48.6c19.7 20.6 47.6 33.6 78.4 33.6 33.3 0 63.2-15.2 82.8-39.1l-22.2-39.6z" fill={isDark ? "#FCD34D" : "#F59E0B"}/>
+            <path d="M256 160l-17.9 36.3-40.1 5.8 29 28.3-6.8 39.9 35.8-18.8 35.8 18.8-6.8-39.9 29-28.3-40.1-5.8L256 160z" fill={isDark ? "#FCD34D" : "#F59E0B"}/>
+            <circle cx="180" cy="280" r="12" fill={isDark ? "#FCD34D" : "#F59E0B"}/>
+            <circle cx="340" cy="250" r="8" fill={isDark ? "#FCD34D" : "#F59E0B"}/>
           </svg>
-          <h1 className="text-xl sm:text-3xl font-magic text-[#F5E6CA] leading-none pt-1 tracking-tight drop-shadow-md">Magic Dziulis</h1>
+          <h1 className={`text-xl sm:text-3xl font-magic leading-none pt-1 tracking-tight drop-shadow-md ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>Magic Dziulis</h1>
         </div>
         
-        <div className="flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 relative">
           {state.hasStarted && !state.isGenerating && (
             <button 
               onClick={() => setState(prev => ({ ...prev, view: prev.view === 'library' ? 'wizard' : 'library', currentStory: null }))}
-              className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-[#2B3A67]/50 rounded-full transition-all flex items-center justify-center text-[#F5E6CA]"
+              className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all flex items-center justify-center ${isDark ? 'hover:bg-[#312E81]/50 text-[#FEF3C7]' : 'hover:bg-[#DCFCE7]/50 text-[#166534]'}`}
               aria-label="Library"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -207,24 +222,69 @@ const App: React.FC = () => {
               </svg>
             </button>
           )}
-          
+
           <button 
-            onClick={toggleLanguage}
-            className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-[#2B3A67]/50 rounded-full transition-all flex items-center justify-center font-bold text-[10px] sm:text-xs uppercase tracking-wider text-[#F5E6CA]"
-            aria-label="Switch Language"
+            onClick={() => {
+              if (navigator.vibrate) navigator.vibrate(15);
+              setShowMenu(!showMenu);
+            }}
+            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full transition-all flex items-center justify-center ${isDark ? 'hover:bg-[#312E81]/50 text-[#FEF3C7]' : 'hover:bg-[#DCFCE7]/50 text-[#166534]'}`}
+            aria-label="Menu"
           >
-            {state.language === 'en' ? 'LT' : 'EN'}
+            <div className="relative w-5 h-4 flex flex-col justify-between items-center">
+              <span className={`block h-[2.5px] w-full rounded-full transform transition duration-300 ease-in-out ${showMenu ? 'rotate-45 translate-y-[6.5px]' : 'translate-y-0'} ${isDark ? 'bg-[#FEF3C7]' : 'bg-[#166534]'}`} />
+              <span className={`block h-[2.5px] w-full rounded-full transition duration-300 ease-in-out ${showMenu ? 'opacity-0' : 'opacity-100'} ${isDark ? 'bg-[#FEF3C7]' : 'bg-[#166534]'}`} />
+              <span className={`block h-[2.5px] w-full rounded-full transform transition duration-300 ease-in-out ${showMenu ? '-rotate-45 -translate-y-[6.5px]' : 'translate-y-0'} ${isDark ? 'bg-[#FEF3C7]' : 'bg-[#166534]'}`} />
+            </div>
           </button>
-          
-          <button 
-            onClick={() => setShowInfo(!showInfo)}
-            className="w-9 h-9 sm:w-10 sm:h-10 hover:bg-[#2B3A67]/50 rounded-full transition-all flex items-center justify-center"
-            aria-label="Informacija"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 sm:h-6 sm:w-6 text-[#F5E6CA]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          </button>
+
+          {showMenu && (
+            <>
+              <div 
+                className="fixed inset-0 z-40"
+                onClick={() => setShowMenu(false)}
+              />
+              <div className={`absolute top-full right-0 mt-2 w-48 rounded-2xl shadow-xl overflow-hidden z-50 animate-[fadeIn_0.2s_ease-out] ${isDark ? 'bg-[#1A1B41]/95 backdrop-blur-xl' : 'bg-white/95 backdrop-blur-xl'}`}>
+                <div className="flex flex-col py-2">
+                  <button 
+                    onClick={() => { toggleTheme(); setShowMenu(false); }}
+                    className={`flex items-center gap-4 px-5 py-3 transition-colors ${isDark ? 'hover:bg-[#312E81]/50 text-[#FEF3C7]' : 'hover:bg-[#DCFCE7]/50 text-[#166534]'}`}
+                  >
+                    {isDark ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                      </svg>
+                    )}
+                    <span className="font-bold text-[15px]">{isDark ? 'Light Mode' : 'Dark Mode'}</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => { toggleLanguage(); setShowMenu(false); }}
+                    className={`flex items-center gap-4 px-5 py-3 transition-colors ${isDark ? 'hover:bg-[#312E81]/50 text-[#FEF3C7]' : 'hover:bg-[#DCFCE7]/50 text-[#166534]'}`}
+                  >
+                    <div className="w-5 h-5 flex items-center justify-center font-black text-xs">
+                      {state.language === 'en' ? 'LT' : 'EN'}
+                    </div>
+                    <span className="font-bold text-[15px]">{state.language === 'en' ? 'Lietuvių' : 'English'}</span>
+                  </button>
+                  
+                  <button 
+                    onClick={() => { setShowInfo(true); setShowMenu(false); }}
+                    className={`flex items-center gap-4 px-5 py-3 transition-colors ${isDark ? 'hover:bg-[#312E81]/50 text-[#FEF3C7]' : 'hover:bg-[#DCFCE7]/50 text-[#166534]'}`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="font-bold text-[15px]">Info</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </header>
 
@@ -234,6 +294,7 @@ const App: React.FC = () => {
             <StoryWizard 
               onGenerate={generateStory} 
               language={state.language} 
+              theme={state.theme}
             />
           )}
 
@@ -244,6 +305,7 @@ const App: React.FC = () => {
               onDeleteStory={deleteSavedStory}
               language={state.language}
               onClose={() => setState(prev => ({ ...prev, view: 'wizard' }))}
+              theme={state.theme}
             />
           )}
 
@@ -253,7 +315,7 @@ const App: React.FC = () => {
                 {[...Array(15 + (state.loadingClicks || 0) * 2)].map((_, i) => (
                   <div
                     key={i}
-                    className="absolute bg-[#F4D35E] rounded-full animate-[floatUp_6s_infinite_ease-in-out] shadow-[0_0_10px_#F4D35E]"
+                    className={`absolute rounded-full animate-[floatUp_6s_infinite_ease-in-out] ${isDark ? 'bg-[#FCD34D] shadow-[0_0_10px_#FCD34D]' : 'bg-[#FEF08A] shadow-[0_0_10px_#FEF08A]'}`}
                     style={{
                       width: Math.random() * 6 + 2 + 'px',
                       height: Math.random() * 6 + 2 + 'px',
@@ -267,13 +329,13 @@ const App: React.FC = () => {
               </div>
 
               <div className="relative mb-10">
-                <div className="absolute -inset-10 bg-[#4338ca]/30 blur-[60px] rounded-full animate-pulse" />
+                <div className={`absolute -inset-10 blur-[60px] rounded-full animate-pulse ${isDark ? 'bg-[#4C1D95]/30' : 'bg-[#BBF7D0]/40'}`} />
                 <button 
                   onClick={() => setState(prev => ({ ...prev, loadingClicks: (prev.loadingClicks || 0) + 1 }))}
-                  className="w-36 h-36 md:w-44 md:h-44 bg-gradient-to-br from-[#1e1b4b] to-[#312e81] border border-[#6B7FD7]/30 rounded-[3.5rem] flex items-center justify-center shadow-[0_25px_60px_-10px_rgba(43,58,103,0.5)] relative overflow-hidden group active:scale-95 transition-transform cursor-pointer"
+                  className={`w-36 h-36 md:w-44 md:h-44 border rounded-[3.5rem] flex items-center justify-center shadow-[0_25px_60px_-10px_rgba(43,58,103,0.5)] relative overflow-hidden group active:scale-95 transition-transform cursor-pointer ${isDark ? 'bg-gradient-to-br from-[#1A1B41] to-[#312E81] border-[#4C1D95]/30' : 'bg-gradient-to-br from-[#F0F9FF] to-[#DCFCE7] border-[#BBF7D0]/60'}`}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-tr from-white/0 via-[#F4D35E]/10 to-white/0 -translate-x-full animate-[sweep_4s_infinite]" />
-                  <div className="relative z-10 text-[#F5E6CA] animate-[bookFlap_2s_infinite_ease-in-out] drop-shadow-[0_0_15px_rgba(244,211,94,0.3)]">
+                  <div className={`absolute inset-0 -translate-x-full animate-[sweep_4s_infinite] ${isDark ? 'bg-gradient-to-tr from-white/0 via-[#FCD34D]/10 to-white/0' : 'bg-gradient-to-tr from-white/0 via-[#FEF08A]/20 to-white/0'}`} />
+                  <div className={`relative z-10 animate-[bookFlap_2s_infinite_ease-in-out] drop-shadow-[0_0_15px_rgba(252,211,77,0.3)] ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 md:h-24 md:w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
@@ -283,11 +345,11 @@ const App: React.FC = () => {
 
               <div className="text-center space-y-3 relative z-10 px-6">
                 <div className="h-12 overflow-hidden flex items-center justify-center">
-                  <p key={loadingMessageIdx} className="text-2xl md:text-3xl font-script text-[#F5E6CA] animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)] drop-shadow-md">
+                  <p key={loadingMessageIdx} className={`text-2xl md:text-3xl font-script animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)] drop-shadow-md ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>
                     {t.loadingMessages[loadingMessageIdx]}
                   </p>
                 </div>
-                <p className="text-[#F4D35E] font-bold text-xs md:text-sm tracking-[0.2em] uppercase drop-shadow-sm">
+                <p className={`font-bold text-xs md:text-sm tracking-[0.2em] uppercase drop-shadow-sm ${isDark ? 'text-[#FCD34D]' : 'text-[#15803D]'}`}>
                   {t.waitMoment}
                 </p>
               </div>
@@ -303,12 +365,13 @@ const App: React.FC = () => {
               language={state.language}
               onSave={() => saveStory(state.currentStory!)}
               isSaved={state.savedStories.some(s => s.id === state.currentStory?.id)}
+              theme={state.theme}
             />
           )}
         </div>
       </main>
 
-      {showInfo && <InfoPanel onClose={() => setShowInfo(false)} language={state.language} />}
+      {showInfo && <InfoPanel onClose={() => setShowInfo(false)} language={state.language} theme={state.theme} />}
 
       <style>{`
         @keyframes sweep {

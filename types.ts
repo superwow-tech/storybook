@@ -3,6 +3,8 @@ export type Language = 'en' | 'lt';
 
 export type View = 'wizard' | 'reader' | 'library';
 
+export type Theme = 'light' | 'dark';
+
 export type SoundType = 'magic' | 'animal' | 'nature' | 'mechanical' | 'transport' | 'emotion';
 
 export interface SoundEffect {
@@ -34,5 +36,6 @@ export interface AppState {
   language: Language;
   savedStories: Story[];
   view: View;
+  theme: Theme;
   loadingClicks?: number;
 }

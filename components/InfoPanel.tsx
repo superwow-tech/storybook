@@ -1,18 +1,20 @@
 
 import React, { useState } from 'react';
 import { translations } from '../translations';
-import { Language } from '../types';
+import { Language, Theme } from '../types';
 
 interface Props {
   onClose: () => void;
   language: Language;
+  theme: Theme;
 }
 
-const InfoPanel: React.FC<Props> = ({ onClose, language }) => {
+const InfoPanel: React.FC<Props> = ({ onClose, language, theme }) => {
   const [feedback, setFeedback] = useState('');
   const [sent, setSent] = useState(false);
 
   const t = translations[language];
+  const isDark = theme === 'dark';
 
   const handleSend = (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,18 +27,18 @@ const InfoPanel: React.FC<Props> = ({ onClose, language }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] md:inset-auto md:bottom-6 md:right-6 md:w-[400px] md:h-[650px] flex flex-col bg-white/60 backdrop-blur-xl md:rounded-[2.5rem] overflow-hidden animate-[popIn_0.4s_cubic-bezier(0.175,0.885,0.32,1.275)]">
+    <div className={`fixed inset-0 z-[100] md:inset-auto md:bottom-6 md:right-6 md:w-[400px] md:h-[650px] flex flex-col backdrop-blur-xl md:rounded-[2.5rem] overflow-hidden animate-[popIn_0.4s_cubic-bezier(0.175,0.885,0.32,1.275)] border ${isDark ? 'bg-[#23214A]/80 border-[#6B7FD7]/30' : 'bg-white/80 border-[#E0E7FF]/60'}`}>
       <header className="bg-transparent p-6 flex justify-between items-center">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 bg-[#749e47]/10 rounded-2xl flex items-center justify-center text-[#749e47]">
+          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${isDark ? 'bg-[#312E81]/50 text-[#F5E6CA]' : 'bg-[#DBEAFE] text-[#3B82F6]'}`}>
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           </div>
-          <h4 className="text-[#4a5d23] font-magic text-2xl leading-tight tracking-wide">{t.infoTitle}</h4>
+          <h4 className={`font-magic text-2xl leading-tight tracking-wide ${isDark ? 'text-[#F5E6CA]' : 'text-[#1E3A8A]'}`}>{t.infoTitle}</h4>
         </div>
-        <button onClick={onClose} className="bg-black/5 hover:bg-black/10 p-2.5 rounded-2xl transition-colors">
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-[#4a5d23]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button onClick={onClose} className={`p-2.5 rounded-2xl transition-colors ${isDark ? 'bg-white/5 hover:bg-white/10 text-[#F5E6CA]' : 'bg-black/5 hover:bg-black/10 text-[#1E3A8A]'}`}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M6 18L18 6M6 6l12 12" />
           </svg>
         </button>
@@ -44,38 +46,38 @@ const InfoPanel: React.FC<Props> = ({ onClose, language }) => {
 
       <div className="flex-1 overflow-y-auto p-6 space-y-8 scrollbar-hide bg-transparent">
         <section className="space-y-3">
-          <h5 className="text-[#4a5d23] font-magic text-2xl tracking-wide">{t.howItWorksTitle}</h5>
-          <p className="text-sm text-[#4a5d23]/80 leading-relaxed font-medium">
+          <h5 className={`font-magic text-2xl tracking-wide ${isDark ? 'text-[#F5E6CA]' : 'text-[#1E3A8A]'}`}>{t.howItWorksTitle}</h5>
+          <p className={`text-sm leading-relaxed font-medium ${isDark ? 'text-[#A39BA8]' : 'text-[#475569]'}`}>
             {t.howItWorksDesc}
           </p>
         </section>
 
         <section className="space-y-3">
-          <h5 className="text-[#4a5d23] font-magic text-2xl tracking-wide">{t.instructionsTitle}</h5>
-          <ul className="text-sm text-[#4a5d23]/80 space-y-2 font-medium">
+          <h5 className={`font-magic text-2xl tracking-wide ${isDark ? 'text-[#F5E6CA]' : 'text-[#1E3A8A]'}`}>{t.instructionsTitle}</h5>
+          <ul className={`text-sm space-y-2 font-medium ${isDark ? 'text-[#A39BA8]' : 'text-[#475569]'}`}>
             <li className="flex gap-2">
-              <span className="text-[#749e47] font-bold">1.</span>
+              <span className={`font-bold ${isDark ? 'text-[#F4D35E]' : 'text-[#3B82F6]'}`}>1.</span>
               {t.instruction1}
             </li>
             <li className="flex gap-2">
-              <span className="text-[#749e47] font-bold">2.</span>
+              <span className={`font-bold ${isDark ? 'text-[#F4D35E]' : 'text-[#3B82F6]'}`}>2.</span>
               {t.instruction2}
             </li>
             <li className="flex gap-2">
-              <span className="text-[#749e47] font-bold">3.</span>
+              <span className={`font-bold ${isDark ? 'text-[#F4D35E]' : 'text-[#3B82F6]'}`}>3.</span>
               {t.instruction3}
             </li>
             <li className="flex gap-2">
-              <span className="text-[#749e47] font-bold">4.</span>
+              <span className={`font-bold ${isDark ? 'text-[#F4D35E]' : 'text-[#3B82F6]'}`}>4.</span>
               {t.instruction4}
             </li>
           </ul>
         </section>
 
-        <section className="space-y-4 pt-4 border-t border-white/30">
+        <section className={`space-y-4 pt-4 border-t ${isDark ? 'border-white/10' : 'border-black/10'}`}>
           <div className="space-y-1">
-            <h5 className="text-[#4a5d23] font-magic text-2xl tracking-wide">{t.feedbackTitle}</h5>
-            <p className="text-xs text-[#4a5d23]/60 font-bold uppercase tracking-wider">{t.feedbackSub}</p>
+            <h5 className={`font-magic text-2xl tracking-wide ${isDark ? 'text-[#F5E6CA]' : 'text-[#1E3A8A]'}`}>{t.feedbackTitle}</h5>
+            <p className={`text-xs font-bold uppercase tracking-wider ${isDark ? 'text-[#A39BA8]' : 'text-[#64748B]'}`}>{t.feedbackSub}</p>
           </div>
           
           <form onSubmit={handleSend} className="space-y-4">
@@ -83,7 +85,7 @@ const InfoPanel: React.FC<Props> = ({ onClose, language }) => {
               value={feedback}
               onChange={(e) => setFeedback(e.target.value)}
               placeholder={t.feedbackPlaceholder}
-              className="w-full h-32 bg-white/40 backdrop-blur-sm rounded-2xl p-4 text-sm font-medium resize-none text-[#4a5d23] placeholder:text-[#4a5d23]/40 focus:outline-none focus:bg-white/60 transition-all border-none shadow-none"
+              className={`w-full h-32 backdrop-blur-sm rounded-2xl p-4 text-sm font-medium resize-none focus:outline-none transition-all border-none shadow-none ${isDark ? 'bg-[#23214A]/40 text-[#F5E6CA] placeholder:text-[#A39BA8]/50 focus:bg-[#23214A]/60' : 'bg-white/40 text-[#1E3A8A] placeholder:text-[#64748B]/50 focus:bg-white/60'}`}
             />
             <button 
               type="submit"
@@ -91,7 +93,7 @@ const InfoPanel: React.FC<Props> = ({ onClose, language }) => {
               className={`w-full py-3 rounded-2xl font-bold transition-all flex items-center justify-center gap-2 ${
                 sent 
                   ? 'bg-green-500 text-white' 
-                  : 'bg-[#749e47] hover:bg-[#5b8e4d] text-white'
+                  : (isDark ? 'bg-[#F4D35E] hover:bg-[#D4AF37] text-[#0B1026]' : 'bg-[#3B82F6] hover:bg-[#2563EB] text-white')
               }`}
             >
               {sent ? (

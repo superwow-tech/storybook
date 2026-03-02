@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { translations } from '../translations';
-import { Language, Story } from '../types';
+import { Language, Story, Theme } from '../types';
 
 interface Props {
   stories: Story[];
@@ -9,17 +9,19 @@ interface Props {
   onDeleteStory: (id: string) => void;
   language: Language;
   onClose: () => void;
+  theme: Theme;
 }
 
-const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, language, onClose }) => {
+const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, language, onClose, theme }) => {
   const t = translations[language];
+  const isDark = theme === 'dark';
 
   return (
     <div className="w-full max-w-5xl mx-auto px-4 py-4 sm:py-8 space-y-6 sm:space-y-8 animate-[fadeIn_0.5s_ease-out]">
-      <div className="relative flex flex-col items-center justify-center pt-2 sm:pt-0">
+      <div className="flex items-center justify-between mb-8 sm:mb-12">
         <button 
           onClick={onClose}
-          className="absolute left-0 top-2 sm:top-1/2 sm:-translate-y-1/2 w-10 h-10 sm:w-12 sm:h-12 bg-[#2B3A67]/50 hover:bg-[#2B3A67]/80 rounded-full flex items-center justify-center text-[#F5E6CA] transition-all active:scale-90 z-10 border border-[#6B7FD7]/30"
+          className={`shrink-0 w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all active:scale-90 z-10 ${isDark ? 'bg-[#1E1B4B]/50 hover:bg-[#1E1B4B]/80 text-[#FEF3C7]' : 'bg-white/50 hover:bg-white/80 text-[#166534]'}`}
           aria-label={t.back}
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -27,30 +29,32 @@ const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, languag
           </svg>
         </button>
         
-        <div className="flex flex-col items-center gap-2 pt-12 sm:pt-0 w-full">
-          <h2 className="text-3xl sm:text-6xl font-magic text-[#F5E6CA] tracking-tight text-center leading-tight px-8 drop-shadow-lg">
+        <div className="flex flex-col items-center flex-1 px-2">
+          <h2 className={`text-2xl sm:text-5xl font-magic tracking-tight text-center leading-tight drop-shadow-lg ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>
             {t.bookshelfTitle}
           </h2>
-          <p className="text-[#A39BA8] font-bold uppercase tracking-[0.2em] text-[10px] sm:text-xs drop-shadow-sm">
+          <p className={`font-bold uppercase tracking-[0.2em] text-[9px] sm:text-xs drop-shadow-sm mt-1 sm:mt-2 ${isDark ? 'text-[#FCD34D]' : 'text-[#15803D]'}`}>
             {stories.length} {stories.length === 1 ? 'STORY' : 'STORIES'} SAVED
           </p>
         </div>
+
+        <div className="w-10 sm:w-12 shrink-0"></div>
       </div>
 
       {stories.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-12 sm:py-20 text-center space-y-6 min-h-[50vh]">
           <div className="text-6xl sm:text-7xl opacity-20 animate-bounce grayscale brightness-200">📚</div>
           <div className="space-y-2 max-w-xs mx-auto">
-            <p className="text-[#F5E6CA] font-magic text-2xl">
+            <p className={`font-magic text-2xl ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>
               {t.emptyLibraryTitle || "It's quiet here..."}
             </p>
-            <p className="text-[#A39BA8] font-medium text-sm sm:text-base">
+            <p className={`font-medium text-sm sm:text-base ${isDark ? 'text-[#D1D5DB]' : 'text-[#475569]'}`}>
               {t.noStories}
             </p>
           </div>
           <button 
             onClick={onClose}
-            className="bg-gradient-to-br from-[#F4D35E] to-[#D4AF37] text-[#0B1026] px-8 py-3 sm:px-10 sm:py-4 rounded-2xl font-bold shadow-[0_0_20px_rgba(244,211,94,0.3)] hover:shadow-[0_0_30px_rgba(244,211,94,0.5)] transition-all active:scale-95 flex items-center gap-2 group mt-4 uppercase tracking-widest"
+            className={`px-8 py-3 sm:px-10 sm:py-4 rounded-2xl font-bold transition-all active:scale-95 flex items-center gap-2 group mt-4 uppercase tracking-widest ${isDark ? 'bg-gradient-to-br from-[#FCD34D] to-[#F59E0B] text-[#451A03] shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-br from-[#60A5FA] to-[#3B82F6] text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]'}`}
           >
             <span className="text-xl group-hover:rotate-12 transition-transform">✨</span>
             <span>{t.createButton}</span>
@@ -62,9 +66,9 @@ const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, languag
             <div 
               key={story.id} 
               onClick={() => onLoadStory(story)}
-              className="group bg-[#0B1026]/60 backdrop-blur-md rounded-[2.5rem] hover:shadow-[0_0_30px_rgba(107,127,215,0.2)] transition-all duration-500 overflow-hidden flex flex-col p-4 relative hover:-translate-y-2 border border-[#6B7FD7]/20 cursor-pointer"
+              className={`group backdrop-blur-md rounded-[2.5rem] transition-all duration-500 overflow-hidden flex flex-col p-4 relative hover:-translate-y-2 cursor-pointer ${isDark ? 'bg-[#1A1B41]/60 hover:shadow-[0_0_30px_rgba(76,29,149,0.2)]' : 'bg-white/60 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]'}`}
             >
-              <div className="aspect-[4/3] bg-[#1e1b4b]/50 rounded-[2rem] overflow-hidden mb-4 border border-[#6B7FD7]/20 shadow-inner relative">
+              <div className={`aspect-[4/3] rounded-[2rem] overflow-hidden mb-4 shadow-inner relative ${isDark ? 'bg-[#0B0F19]/50' : 'bg-white/50'}`}>
                 {story.pages[0]?.imageUrl && (
                   <img 
                     src={story.pages[0].imageUrl} 
@@ -72,22 +76,22 @@ const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, languag
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
                   />
                 )}
-                <div className="absolute top-3 right-3 bg-[#0B1026]/80 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black text-[#F4D35E] shadow-sm border border-[#6B7FD7]/30">
+                <div className={`absolute top-3 right-3 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black shadow-sm ${isDark ? 'bg-[#1A1B41]/80 text-[#FCD34D]' : 'bg-white/80 text-[#3B82F6]'}`}>
                   {story.pages.length} {t.pages}
                 </div>
               </div>
               
               <div className="flex-1 px-2 space-y-1">
-                <h4 className="font-magic text-[#F5E6CA] text-2xl line-clamp-2 leading-tight tracking-tight drop-shadow-sm">
+                <h4 className={`font-magic text-2xl line-clamp-2 leading-tight tracking-tight drop-shadow-sm ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>
                   {story.title || 'Untitled'}
                 </h4>
-                <p className="text-[10px] text-[#A39BA8] font-black uppercase tracking-widest opacity-70">
+                <p className={`text-[10px] font-black uppercase tracking-widest opacity-70 ${isDark ? 'text-[#D1D5DB]' : 'text-[#15803D]'}`}>
                   {story.timestamp ? new Date(story.timestamp).toLocaleDateString(language === 'lt' ? 'lt-LT' : 'en-US') : ''}
                 </p>
               </div>
               
               <div className="flex gap-3 mt-6">
-                <div className="flex-1 bg-gradient-to-br from-[#F4D35E] to-[#D4AF37] text-[#0B1026] py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-md hover:shadow-lg text-center hover:brightness-110">
+                <div className={`flex-1 py-3 rounded-2xl text-xs font-black uppercase tracking-widest transition-all active:scale-95 shadow-md hover:shadow-lg text-center hover:brightness-110 ${isDark ? 'bg-gradient-to-br from-[#FCD34D] to-[#F59E0B] text-[#451A03]' : 'bg-gradient-to-br from-[#60A5FA] to-[#3B82F6] text-white'}`}>
                   {t.loadStory}
                 </div>
                 <button 
@@ -95,7 +99,7 @@ const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, languag
                     e.stopPropagation();
                     onDeleteStory(story.id!);
                   }}
-                  className="bg-rose-900/40 text-rose-300 p-3 rounded-2xl hover:bg-rose-900/60 transition-all border border-rose-500/20 active:scale-95 shadow-sm relative z-10"
+                  className={`p-3 rounded-2xl transition-all active:scale-95 shadow-sm relative z-10 ${isDark ? 'bg-rose-900/40 text-rose-300 hover:bg-rose-900/60' : 'bg-rose-100 text-rose-600 hover:bg-rose-200'}`}
                   aria-label={t.deleteStory}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">

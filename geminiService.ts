@@ -35,7 +35,7 @@ export async function decodeAudioData(
 
 export class GeminiService {
   private getAI() {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY;
+    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || process.env.GEMINI_API_KEY || process.env.API_KEY;
     if (!apiKey) {
       throw new Error("Gemini API Key is missing. Please set VITE_GEMINI_API_KEY in your environment variables.");
     }
@@ -45,6 +45,8 @@ export class GeminiService {
   async generateStoryStructure(prompt: string, language: Language, pageCount: number = 5): Promise<Story> {
     const ai = this.getAI();
     const langName = language === 'en' ? 'English' : 'Lithuanian';
+    const stressInstruction = language === 'lt' ? '\n      CRITICAL REQUIREMENT: You MUST use Lithuanian stress marks (kirčiavimas) on words for better reading (e.g., "drą̃sųjį", "mãžąjį").' : '';
+    
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: `Create an enchanting children's story based on: "${prompt}". 
@@ -53,7 +55,7 @@ export class GeminiService {
       Dziulis is a curious, kind-hearted magical boy with a blue star-topped hat and a small cape. 
       He solves problems with kindness and magic.
       
-      THE STORY MUST BE WRITTEN IN ${langName.toUpperCase()}.
+      THE STORY MUST BE WRITTEN IN ${langName.toUpperCase()}.${stressInstruction}
       Return the story as a JSON object with a title and exactly ${pageCount} pages. 
       Each page must have:
       1. "text": a rich paragraph of 4-6 sentences.
@@ -100,7 +102,7 @@ export class GeminiService {
   async generateImage(prompt: string): Promise<string> {
     const ai = this.getAI();
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash-image',
+      model: 'gemini-3.1-flash-image-preview',
       contents: {
         parts: [{ text: `A magical children's book illustration: ${prompt}. Dziulis is a cute magical boy with a star hat. Soft cinematic lighting, vibrant colors, dreamy whimsical style, professional art quality.` }]
       },

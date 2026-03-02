@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Story, Language } from '../types';
+import { Story, Language, Theme } from '../types';
 import { translations } from '../translations';
 import { decodeBase64, decodeAudioData } from '../geminiService';
 
@@ -12,21 +12,10 @@ interface Props {
   language: Language;
   onSave?: () => void;
   isSaved?: boolean;
+  theme: Theme;
 }
 
-// Map of sound categories to high-quality short audio clips
-const SFX_MAP: Record<string, string> = {
-  magic: 'https://assets.mixkit.co/active_storage/sfx/2012/2012-preview.mp3', // Magical chime
-  animal: 'https://assets.mixkit.co/active_storage/sfx/2013/2013-preview.mp3', // Generic bird/animal
-  nature: 'https://assets.mixkit.co/active_storage/sfx/2006/2006-preview.mp3', // Wind/Whoosh
-  mechanical: 'https://assets.mixkit.co/active_storage/sfx/2005/2005-preview.mp3', // Mechanical click/ding
-  transport: 'https://assets.mixkit.co/active_storage/sfx/2011/2011-preview.mp3', // Choo choo / engine
-  emotion: 'https://assets.mixkit.co/active_storage/sfx/2015/2015-preview.mp3', // Surprise/Ding
-};
-
-const sfxBufferCache: Record<string, AudioBuffer> = {};
-
-const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onReset, language, onSave, isSaved }) => {
+const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onReset, language, onSave, isSaved, theme }) => {
   const [isPlaying, setIsPlaying] = useState(false);
   const [highlightIndex, setHighlightIndex] = useState(-1);
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
@@ -38,34 +27,65 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
   const animationFrameRef = useRef<number | null>(null);
   const isPlayingRef = useRef(false);
 
-  // To track which sound effects have already played for the current page
-  const playedSfxRef = useRef<Set<number>>(new Set());
-
   const t = translations[language];
   const totalPages = story.pages.length;
   const isLastPage = currentIndex === totalPages - 1;
   const currentPage = story.pages[currentIndex];
+  const isDark = theme === 'dark';
 
   const words = currentPage?.text ? currentPage.text.trim().split(/\s+/) : [];
 
+  const [slideDir, setSlideDir] = useState<'left' | 'right'>('right');
+  const [swipeOffset, setSwipeOffset] = useState(0);
+
   const handleNext = () => {
-    if (currentIndex < totalPages - 1) onPageChange(currentIndex + 1);
+    if (currentIndex < totalPages - 1) {
+      if (navigator.vibrate) navigator.vibrate(30);
+      setSlideDir('right');
+      onPageChange(currentIndex + 1);
+    }
   };
 
   const handlePrev = () => {
-    if (currentIndex > 0) onPageChange(currentIndex - 1);
+    if (currentIndex > 0) {
+      if (navigator.vibrate) navigator.vibrate(30);
+      setSlideDir('left');
+      onPageChange(currentIndex - 1);
+    }
   };
 
   const touchStartX = useRef<number | null>(null);
+  const touchCurrentX = useRef<number | null>(null);
+
   const handleTouchStart = (e: React.TouchEvent) => {
     touchStartX.current = e.touches[0].clientX;
+    touchCurrentX.current = e.touches[0].clientX;
   };
-  const handleTouchEnd = (e: React.TouchEvent) => {
+
+  const handleTouchMove = (e: React.TouchEvent) => {
     if (!touchStartX.current) return;
-    const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (diff > 60) handleNext();
-    else if (diff < -60) handlePrev();
+    touchCurrentX.current = e.touches[0].clientX;
+    const diff = touchCurrentX.current - touchStartX.current;
+    // Limit visual offset to prevent dragging too far off screen
+    setSwipeOffset(Math.max(-100, Math.min(100, diff)));
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!touchStartX.current || !touchCurrentX.current) {
+      setSwipeOffset(0);
+      return;
+    }
+    const diff = touchStartX.current - touchCurrentX.current;
+    
+    if (diff > 60) {
+      handleNext();
+    } else if (diff < -60) {
+      handlePrev();
+    }
+    
+    setSwipeOffset(0);
     touchStartX.current = null;
+    touchCurrentX.current = null;
   };
 
   const stopAudio = () => {
@@ -83,37 +103,14 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
     }
     setIsPlaying(false);
     setHighlightIndex(-1);
-    playedSfxRef.current.clear();
   };
 
-  const playSfx = async (type: string) => {
-    const url = SFX_MAP[type];
-    if (!url) return;
-    
-    const ctx = audioContextRef.current;
-    if (!ctx) return;
-
-    try {
-      let buffer = sfxBufferCache[type];
-      if (!buffer) {
-        const response = await fetch(url);
-        const arrayBuffer = await response.arrayBuffer();
-        buffer = await ctx.decodeAudioData(arrayBuffer);
-        sfxBufferCache[type] = buffer;
-      }
-
-      const source = ctx.createBufferSource();
-      source.buffer = buffer;
-      
-      const gainNode = ctx.createGain();
-      gainNode.gain.value = 0.4; // Slightly lower than voice
-      
-      source.connect(gainNode);
-      gainNode.connect(ctx.destination);
-      
-      source.start();
-    } catch (e) {
-      console.warn("SFX failed to play", e);
+  const toggleAudio = () => {
+    if (isPlaying) {
+      if (navigator.vibrate) navigator.vibrate(20);
+      stopAudio();
+    } else {
+      playAudio();
     }
   };
 
@@ -157,24 +154,6 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
         
         if (wordIndex >= 0 && wordIndex < words.length) {
           if (wordIndex !== highlightIndex) {
-            // Check all indices since last highlight to catch skipped triggers
-            const startCheck = highlightIndex === -1 ? 0 : highlightIndex;
-            const endCheck = wordIndex;
-
-            for (let i = startCheck; i <= endCheck; i++) {
-              if (i >= words.length) break;
-              if (!playedSfxRef.current.has(i)) {
-                const wordClean = words[i].toLowerCase().replace(/[.,!?;:]/g, '');
-                const sfxMatch = currentPage.soundEffects?.find(s => 
-                  s.word.toLowerCase().replace(/[.,!?;:]/g, '') === wordClean
-                );
-
-                if (sfxMatch) {
-                  playedSfxRef.current.add(i);
-                  playSfx(sfxMatch.type);
-                }
-              }
-            }
             setHighlightIndex(wordIndex);
           }
         } else if (progress >= 1) {
@@ -208,8 +187,9 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
 
   return (
     <div 
-      className="w-full h-full flex flex-col items-center justify-start py-2 sm:py-4 relative"
+      className="w-full h-full flex flex-col items-center justify-start py-2 sm:py-4 relative overflow-hidden"
       onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
     >
       {/* Floating Navigation Buttons */}
@@ -218,7 +198,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
           {currentIndex > 0 && (
             <button 
               onClick={handlePrev}
-              className="fixed left-2 sm:left-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 sm:w-16 sm:h-16 bg-[#2B3A67]/80 backdrop-blur-md rounded-full flex items-center justify-center text-[#F5E6CA] shadow-lg hover:bg-[#2B3A67] transition-all active:scale-90 border border-[#6B7FD7]/30"
+              className={`fixed left-2 sm:left-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 sm:w-16 sm:h-16 backdrop-blur-md rounded-full flex items-center justify-center shadow-lg transition-all active:scale-90 border ${isDark ? 'bg-[#1E1B4B]/80 text-[#FEF3C7] hover:bg-[#312E81] border-[#4C1D95]/30' : 'bg-white/80 text-[#166534] hover:bg-white border-[#BBF7D0]/60'}`}
               aria-label={t.previous}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -229,7 +209,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
           {!isLastPage && (
             <button 
               onClick={handleNext}
-              className="fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 sm:w-16 sm:h-16 bg-[#F4D35E] rounded-full flex items-center justify-center text-[#0B1026] shadow-[0_0_20px_rgba(244,211,94,0.4)] hover:bg-[#D4AF37] transition-all active:scale-90 animate-[pulseScale_2s_infinite]"
+              className={`fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-50 w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center shadow-[0_0_20px_rgba(252,211,77,0.4)] transition-all active:scale-90 animate-[pulseScale_2s_infinite] ${isDark ? 'bg-[#FCD34D] text-[#451A03] hover:bg-[#F59E0B]' : 'bg-[#3B82F6] text-white hover:bg-[#2563EB] shadow-[0_0_20px_rgba(59,130,246,0.4)]'}`}
               aria-label={t.next}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 sm:h-8 sm:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -240,9 +220,16 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
         </>
       )}
 
-      <div className="w-full max-w-[500px] flex flex-col gap-6 relative z-10 px-4">
+      <div 
+        key={currentIndex} 
+        className={`w-full max-w-[500px] flex flex-col gap-6 relative z-10 px-4 animate-[${slideDir === 'right' ? 'slideInRight' : 'slideInLeft'}_0.4s_cubic-bezier(0.16,1,0.3,1)]`}
+        style={{
+          transform: swipeOffset ? `translateX(${swipeOffset}px) rotate(${swipeOffset * 0.05}deg)` : 'none',
+          transition: swipeOffset ? 'none' : 'transform 0.3s ease-out'
+        }}
+      >
         
-        <div className="w-full aspect-[4/3] bg-[#0B1026]/50 relative overflow-hidden group rounded-[2rem] shadow-2xl border border-[#6B7FD7]/30">
+        <div className={`w-full aspect-[4/3] relative overflow-hidden group rounded-[2rem] shadow-2xl ${isDark ? 'bg-[#1A1B41]/50' : 'bg-white/50'}`}>
           {currentPage?.imageUrl ? (
             <img 
               key={currentPage.imageUrl}
@@ -251,12 +238,12 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
               className="w-full h-full object-cover animate-[fadeIn_0.5s_ease-out] transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center gap-3 p-6 text-[#6B7FD7]">
+            <div className={`w-full h-full flex flex-col items-center justify-center gap-3 p-6 ${isDark ? 'text-[#6B7FD7]' : 'text-[#3B82F6]'}`}>
               <div className="relative">
-                <div className="w-12 h-12 border-4 border-[#2B3A67] border-t-[#F4D35E] rounded-full animate-spin" />
+                <div className={`w-12 h-12 border-4 rounded-full animate-spin ${isDark ? 'border-[#312E81] border-t-[#FCD34D]' : 'border-[#BFDBFE] border-t-[#3B82F6]'}`} />
                 <div className="absolute inset-0 flex items-center justify-center text-xs">✨</div>
               </div>
-              <p className="font-magic text-2xl text-center text-[#F5E6CA] animate-pulse">{t.painting}</p>
+              <p className={`font-magic text-2xl text-center animate-pulse ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>{t.painting}</p>
             </div>
           )}
           
@@ -294,7 +281,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
                     if (onSave) onSave();
                   }, 1000);
                 }}
-                className="bg-[#0B1026]/80 backdrop-blur-md p-3 rounded-full text-[#F4D35E] shadow-lg border border-[#6B7FD7]/30 hover:bg-[#1e1b4b] transition-all active:scale-95 group"
+                className={`backdrop-blur-md p-3 rounded-full shadow-lg transition-all active:scale-95 group ${isDark ? 'bg-[#1A1B41]/80 text-[#FCD34D] hover:bg-[#312E81]' : 'bg-white/80 text-[#3B82F6] hover:bg-white'}`}
                 title={t.saveToBookshelf}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -305,7 +292,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
           </div>
 
           {showSaveSuccess && (
-            <div className="absolute top-14 right-4 bg-[#F4D35E] text-[#0B1026] px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-lg animate-[bounceIn_0.4s_ease-out]">
+            <div className={`absolute top-14 right-4 px-3 py-1.5 rounded-xl text-[10px] font-bold shadow-lg animate-[bounceIn_0.4s_ease-out] ${isDark ? 'bg-[#FCD34D] text-[#451A03]' : 'bg-[#3B82F6] text-white'}`}>
               {t.storySaved}
             </div>
           )}
@@ -313,38 +300,25 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
 
         <div className="flex flex-col gap-5">
           <div className="space-y-4">
-            <div className="min-h-[160px] sm:min-h-[200px] bg-[#0B1026]/60 backdrop-blur-md p-6 rounded-[2rem] overflow-y-auto scrollbar-hide shadow-inner border border-[#6B7FD7]/20">
-              <p className="text-lg sm:text-xl font-medium leading-relaxed transition-all text-[#E2E8F0]">
+            <div className={`min-h-[160px] sm:min-h-[200px] backdrop-blur-md p-6 rounded-[2rem] overflow-y-auto scrollbar-hide shadow-inner ${isDark ? 'bg-[#1A1B41]/60' : 'bg-white/60'}`}>
+              <p className={`text-lg sm:text-xl font-medium leading-relaxed transition-all ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>
                 {words.map((word, idx) => {
                   const isActive = idx === highlightIndex;
-                  const wordClean = word.toLowerCase().replace(/[.,!?;:]/g, '');
-                  const sfxMatch = currentPage.soundEffects?.find(s => 
-                    s.word.toLowerCase().replace(/[.,!?;:]/g, '') === wordClean
-                  );
 
                   return (
                     <span 
                       key={idx}
                       className={`inline-block mr-1.5 transition-all duration-300 rounded-md px-1 py-0.5 relative ${
                         isActive 
-                          ? 'bg-[#F4D35E] text-[#0B1026] scale-110 shadow-[0_0_10px_rgba(244,211,94,0.5)] font-bold -translate-y-0.5' 
-                          : 'text-[#E2E8F0]'
+                          ? (isDark ? 'bg-[#FCD34D] text-[#451A03] scale-110 shadow-[0_0_10px_rgba(252,211,77,0.5)] font-bold -translate-y-0.5' : 'bg-[#3B82F6] text-white scale-110 shadow-[0_0_10px_rgba(59,130,246,0.5)] font-bold -translate-y-0.5')
+                          : (isDark ? 'text-[#FEF3C7]' : 'text-[#166534]')
                       }`}
                     >
                       {word}
-                      {sfxMatch && (
-                        <span 
-                          className={`absolute -top-2 -right-1 text-[10px] transition-all duration-500 ${
-                            isActive ? 'opacity-100 scale-150 rotate-12 text-[#F4D35E]' : 'opacity-30 scale-100 rotate-0 text-[#6B7FD7]'
-                          }`}
-                        >
-                          ✨
-                        </span>
-                      )}
                     </span>
                   );
                 })}
-                {!currentPage?.text && <span className="animate-pulse text-[#6B7FD7]">...</span>}
+                {!currentPage?.text && <span className={`animate-pulse ${isDark ? 'text-[#6B7FD7]' : 'text-[#3B82F6]'}`}>...</span>}
               </p>
             </div>
           </div>
@@ -355,54 +329,64 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
               {story.pages.map((_, i) => (
                 <div 
                   key={i} 
-                  className={`h-1.5 rounded-full transition-all duration-500 ${i === currentIndex ? 'bg-[#F4D35E] w-4 shadow-[0_0_5px_#F4D35E]' : 'bg-white/10 w-1.5'}`} 
+                  className={`h-1.5 rounded-full transition-all duration-500 ${i === currentIndex ? (isDark ? 'bg-[#FCD34D] w-4 shadow-[0_0_5px_#FCD34D]' : 'bg-[#3B82F6] w-4 shadow-[0_0_5px_#3B82F6]') : (isDark ? 'bg-white/10 w-1.5' : 'bg-[#166534]/20 w-1.5')}`} 
                 />
               ))}
             </div>
 
             <button
-              onClick={playAudio}
-              disabled={!currentPage?.audioData || isPlaying}
+              onClick={toggleAudio}
+              disabled={!currentPage?.audioData && !isPlaying}
               className={`w-full flex items-center justify-center gap-3 py-3 sm:py-4 rounded-[1.5rem] transition-all overflow-hidden relative shadow-lg ${
                 isPlaying 
-                  ? 'bg-[#0B1026]/40 backdrop-blur-md text-[#A39BA8] border border-[#6B7FD7]/20' 
-                  : 'bg-gradient-to-r from-[#2B3A67] to-[#1e1b4b] text-[#F5E6CA] border border-[#6B7FD7]/40 hover:brightness-110'
+                  ? (isDark ? 'bg-[#1A1B41]/40 backdrop-blur-md text-[#D1D5DB] hover:bg-[#1A1B41]/60' : 'bg-white/40 backdrop-blur-md text-[#166534] hover:bg-white/60')
+                  : (isDark ? 'bg-gradient-to-r from-[#312E81] to-[#1E1B4B] text-[#FEF3C7] hover:brightness-110' : 'bg-gradient-to-r from-[#60A5FA] to-[#3B82F6] text-white hover:brightness-110')
               }`}
             >
               {isPlaying ? (
                 <>
                   <div className="flex gap-1.5 items-end h-4">
-                    <div className="w-1.5 bg-[#F4D35E] rounded-full animate-[soundWave_0.6s_infinite_0s]" />
-                    <div className="w-1.5 bg-[#F4D35E] rounded-full animate-[soundWave_0.6s_infinite_0.1s]" />
-                    <div className="w-1.5 bg-[#F4D35E] rounded-full animate-[soundWave_0.6s_infinite_0.2s]" />
+                    <div className={`w-1.5 rounded-full animate-[soundWave_0.6s_infinite_0s] ${isDark ? 'bg-[#FCD34D]' : 'bg-[#3B82F6]'}`} />
+                    <div className={`w-1.5 rounded-full animate-[soundWave_0.6s_infinite_0.1s] ${isDark ? 'bg-[#FCD34D]' : 'bg-[#3B82F6]'}`} />
+                    <div className={`w-1.5 rounded-full animate-[soundWave_0.6s_infinite_0.2s] ${isDark ? 'bg-[#FCD34D]' : 'bg-[#3B82F6]'}`} />
                   </div>
-                  <span className="text-lg sm:text-xl font-magic text-[#F5E6CA] tracking-wide">{t.reading}</span>
+                  <span className={`text-lg sm:text-xl font-magic tracking-wide ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>{t.reading}</span>
                 </>
               ) : (
                 <>
-                  <div className="w-8 h-8 bg-[#F4D35E]/20 rounded-full flex items-center justify-center relative z-10">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#F4D35E]" viewBox="0 0 20 20" fill="currentColor">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center relative z-10 ${isDark ? 'bg-[#FCD34D]/20' : 'bg-white/20'}`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${isDark ? 'text-[#FCD34D]' : 'text-white'}`} viewBox="0 0 20 20" fill="currentColor">
                       <path fillRule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.983 5.983 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.984 3.984 0 00-1.172-2.828a1 1 0 010-1.415z" clipRule="evenodd" />
                     </svg>
                   </div>
-                  <span className="text-xl sm:text-2xl font-magic tracking-wide relative z-10 uppercase font-bold text-[#F5E6CA] drop-shadow-sm">{t.readToMe}</span>
+                  <span className={`text-xl sm:text-2xl font-magic tracking-wide relative z-10 uppercase font-bold drop-shadow-sm ${isDark ? 'text-[#FEF3C7]' : 'text-white'}`}>{t.readToMe}</span>
                 </>
               )}
             </button>
 
             {isLastPage && !isPlaying && hasReadCurrentPage && (
-              <button
-                onClick={onReset}
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-[1.5rem] font-magic text-xl text-[#0B1026] bg-[#F5E6CA] hover:bg-white transition-all animate-[bounceIn_0.5s_ease-out] shadow-[0_0_15px_rgba(245,230,202,0.4)] uppercase tracking-wide font-bold"
-              >
-                <span>{t.oneMore}</span>
-              </button>
+              <div className="flex flex-col gap-3 w-full">
+                {!isSaved && (
+                  <button
+                    onClick={handleSave}
+                    className={`w-full flex items-center justify-center gap-2 py-3 rounded-[1.5rem] font-magic text-xl transition-all animate-[bounceIn_0.5s_ease-out] uppercase tracking-wide font-bold ${isDark ? 'text-[#451A03] bg-[#FCD34D] hover:bg-white shadow-[0_0_15px_rgba(252,211,77,0.4)]' : 'text-white bg-[#3B82F6] hover:bg-[#2563EB] shadow-[0_0_15px_rgba(59,130,246,0.4)]'}`}
+                  >
+                    <span>{t.saveToBookshelf}</span>
+                  </button>
+                )}
+                <button
+                  onClick={onReset}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-[1.5rem] font-magic text-xl transition-all animate-[bounceIn_0.5s_ease-out] uppercase tracking-wide font-bold ${isDark ? 'text-[#FEF3C7] bg-[#312E81] hover:bg-[#4C1D95]' : 'text-[#166534] bg-white hover:bg-[#F0FDF4]'}`}
+                >
+                  <span>{t.oneMore}</span>
+                </button>
+              </div>
             )}
           </div>
         </div>
       </div>
       
-      <p className="hidden md:block text-[10px] font-black text-[#6B7FD7] uppercase tracking-[0.2em] mt-6 animate-pulse relative z-10 opacity-60">
+      <p className={`hidden md:block text-[10px] font-black uppercase tracking-[0.2em] mt-6 animate-pulse relative z-10 opacity-60 ${isDark ? 'text-[#6B7FD7]' : 'text-[#3B82F6]'}`}>
         {t.desktopHint}
       </p>
 
@@ -423,6 +407,14 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
         @keyframes pulseScale {
           0%, 100% { transform: translateY(-50%) scale(1); }
           50% { transform: translateY(-50%) scale(1.1); }
+        }
+        @keyframes slideInRight {
+          from { opacity: 0; transform: translateX(40px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes slideInLeft {
+          from { opacity: 0; transform: translateX(-40px); }
+          to { opacity: 1; transform: translateX(0); }
         }
       `}</style>
     </div>

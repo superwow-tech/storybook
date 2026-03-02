@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { translations } from '../translations';
-import { Language } from '../types';
+import { Language, Theme } from '../types';
 
 interface Props {
   onGenerate: (prompt: string, pageCount: number) => void;
   language: Language;
+  theme: Theme;
 }
 
 interface SuggestionItem {
@@ -14,14 +15,21 @@ interface SuggestionItem {
   id: number;
 }
 
-const COLORS = [
-  "bg-[#2B3A67]/60 text-[#F5E6CA] border-[#6B7FD7]/30",
-  "bg-[#1e1b4b]/60 text-[#F5E6CA] border-[#6B7FD7]/30",
-  "bg-[#312e81]/60 text-[#F5E6CA] border-[#6B7FD7]/30",
-  "bg-[#4c1d95]/60 text-[#F5E6CA] border-[#6B7FD7]/30",
+const DARK_COLORS = [
+  "bg-[#1E1B4B]/80 text-[#FDE68A] border-[#4C1D95]/50",
+  "bg-[#312E81]/80 text-[#FDE68A] border-[#4338CA]/50",
+  "bg-[#4C1D95]/80 text-[#FDE68A] border-[#6D28D9]/50",
+  "bg-[#172554]/80 text-[#FDE68A] border-[#1E3A8A]/50",
 ];
 
-const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
+const LIGHT_COLORS = [
+  "bg-[#DCFCE7]/80 text-[#14532D] border-[#86EFAC]/50",
+  "bg-[#FEF9C3]/80 text-[#713F12] border-[#FDE047]/50",
+  "bg-[#E0F2FE]/80 text-[#0C4A6E] border-[#7DD3FC]/50",
+  "bg-[#FCE7F3]/80 text-[#831843] border-[#F9A8D4]/50",
+];
+
+const StoryWizard: React.FC<Props> = ({ onGenerate, language, theme }) => {
   const [prompt, setPrompt] = useState('');
   const [isFocused, setIsFocused] = useState(false);
   const [pageCount, setPageCount] = useState(5);
@@ -29,6 +37,8 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
   
   const t = translations[language];
   const pageOptions = [3, 5, 7, 10];
+  const isDark = theme === 'dark';
+  const currentColors = isDark ? DARK_COLORS : LIGHT_COLORS;
 
   // Initialize and randomize suggestions
   useEffect(() => {
@@ -37,13 +47,13 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
     
     const initial = shuffledPool.slice(0, 4).map((text, i) => ({
       text,
-      color: COLORS[i % COLORS.length],
+      color: currentColors[i % currentColors.length],
       id: Math.random()
     }));
     
     setDisplayedSuggestions(initial);
     setPrompt(''); // Clear prompt on language change
-  }, [language]);
+  }, [language, theme]); // Re-run when theme changes to update colors
 
   // Rotate suggestions overtime
   useEffect(() => {
@@ -56,7 +66,7 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
         if (availablePool.length === 0) return current;
 
         const newSuggestionText = availablePool[Math.floor(Math.random() * availablePool.length)];
-        const newColor = COLORS[Math.floor(Math.random() * COLORS.length)];
+        const newColor = currentColors[Math.floor(Math.random() * currentColors.length)];
 
         const next = [...current];
         next[indexToReplace] = {
@@ -69,11 +79,22 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
     }, 6000);
 
     return () => clearInterval(interval);
-  }, [language, t.suggestions]);
+  }, [language, t.suggestions, theme]);
+
+  const handleSuggestionClick = (text: string) => {
+    if (navigator.vibrate) navigator.vibrate(20);
+    setPrompt(text);
+  };
+
+  const handlePageCountChange = (opt: number) => {
+    if (navigator.vibrate) navigator.vibrate(15);
+    setPageCount(opt);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (prompt.trim()) {
+      if (navigator.vibrate) navigator.vibrate(40);
       onGenerate(prompt, pageCount);
     }
   };
@@ -81,28 +102,27 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
   return (
     <div className="w-full max-w-4xl space-y-6 sm:space-y-8 animate-[slideUp_0.5s_cubic-bezier(0.16,1,0.3,1)] py-2 sm:py-4">
       <div className="max-w-lg mx-auto relative">
-        <div className="absolute -top-24 -left-24 w-64 h-64 bg-[#312e81]/20 blur-[80px] rounded-full pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-64 h-64 bg-[#4c1d95]/20 blur-[80px] rounded-full pointer-events-none" />
+        <div className={`absolute -top-24 -left-24 w-64 h-64 blur-[80px] rounded-full pointer-events-none ${isDark ? 'bg-[#4C1D95]/20' : 'bg-[#FEF08A]/40'}`} />
+        <div className={`absolute -bottom-24 -right-24 w-64 h-64 blur-[80px] rounded-full pointer-events-none ${isDark ? 'bg-[#1D4ED8]/20' : 'bg-[#86EFAC]/40'}`} />
 
         <div className="relative z-10 text-center px-4">
-          <h2 className="text-3xl md:text-5xl font-magic mb-3 text-[#F5E6CA] leading-tight drop-shadow-md tracking-tight">
-            {t.wizardTitle}
-          </h2>
-          <p className="text-[#A39BA8] font-bold mb-6 sm:mb-8 text-[10px] sm:text-[11px] tracking-[0.15em] uppercase opacity-90 drop-shadow-sm">
+          <p className={`font-bold mb-6 sm:mb-8 text-[10px] sm:text-[11px] tracking-[0.15em] uppercase opacity-90 drop-shadow-sm ${isDark ? 'text-[#FCD34D]' : 'text-[#166534]'}`}>
             {t.wizardSub}
           </p>
           
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-8">
-            <div className={`group relative transition-all duration-500 rounded-[1.5rem] sm:rounded-[2.5rem] border border-[#6B7FD7]/20 ${
-              isFocused ? 'bg-[#0B1026]/60 scale-[1.01] shadow-[0_0_30px_rgba(107,127,215,0.2)]' : 'bg-[#0B1026]/40 hover:bg-[#0B1026]/50'
+            <div className={`group relative transition-all duration-500 rounded-[1.5rem] sm:rounded-[2.5rem] ${
+              isFocused 
+                ? (isDark ? 'bg-[#1A1B41]/80 scale-[1.01] shadow-[0_0_30px_rgba(76,29,149,0.3)]' : 'bg-white/90 scale-[1.01] shadow-[0_0_30px_rgba(187,247,208,0.4)]')
+                : (isDark ? 'bg-[#1A1B41]/60 hover:bg-[#1A1B41]/70' : 'bg-[#FEFCE8]/60 hover:bg-white/70')
             }`}>
               <textarea
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
-                placeholder={t.placeholder}
-                className="w-full h-24 sm:h-32 bg-transparent p-6 text-base sm:text-xl text-[#F5E6CA] placeholder:text-[#A39BA8]/50 focus:outline-none resize-none font-medium leading-relaxed"
+                placeholder={t.wizardTitle}
+                className={`w-full h-28 sm:h-32 bg-transparent p-5 text-base sm:text-xl placeholder:text-opacity-50 focus:outline-none resize-none font-medium leading-relaxed scrollbar-hide ${isDark ? 'text-[#FEF3C7] placeholder:text-[#9CA3AF]' : 'text-[#166534] placeholder:text-[#166534]/50'}`}
               />
             </div>
 
@@ -111,8 +131,8 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
                 <button
                   key={s.id}
                   type="button"
-                  onClick={() => setPrompt(s.text)}
-                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[10px] sm:text-[12px] font-bold transition-all hover:scale-105 active:scale-95 ${s.color} shadow-sm hover:shadow-md animate-[popIn_0.4s_ease-out] backdrop-blur-sm border border-white/5`}
+                  onClick={() => handleSuggestionClick(s.text)}
+                  className={`px-3 py-1.5 sm:px-4 sm:py-2 rounded-full text-[12px] sm:text-[14px] font-bold transition-all hover:scale-105 active:scale-90 ${s.color} shadow-sm hover:shadow-md animate-[popIn_0.4s_ease-out] backdrop-blur-sm`}
                 >
                   {s.text}
                 </button>
@@ -120,19 +140,19 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
             </div>
 
             <div className="space-y-3 sm:space-y-4">
-              <label className="text-[10px] font-black text-[#F4D35E] uppercase tracking-[0.2em] block opacity-80 drop-shadow-sm">
+              <label className={`text-[10px] font-black uppercase tracking-[0.2em] block opacity-80 drop-shadow-sm ${isDark ? 'text-[#FCD34D]' : 'text-[#166534]'}`}>
                 {t.storyLength}
               </label>
-              <div className="bg-[#0B1026]/40 backdrop-blur-md p-1.5 rounded-[1.5rem] sm:rounded-[2rem] flex justify-between gap-1.5 shadow-inner border border-[#6B7FD7]/20">
+              <div className={`backdrop-blur-md p-1.5 rounded-[1.5rem] sm:rounded-[2rem] flex justify-between gap-1.5 shadow-inner ${isDark ? 'bg-[#0B0F19]/40' : 'bg-white/40'}`}>
                 {pageOptions.map((opt) => (
                   <button
                     key={opt}
                     type="button"
-                    onClick={() => setPageCount(opt)}
-                    className={`flex-1 py-2 sm:py-3 px-1.5 rounded-[1.3rem] sm:rounded-[1.8rem] font-black transition-all duration-300 flex flex-col items-center justify-center gap-0.5 ${
+                    onClick={() => handlePageCountChange(opt)}
+                    className={`flex-1 py-2 sm:py-3 px-1.5 rounded-[1.3rem] sm:rounded-[1.8rem] font-black transition-all duration-300 flex flex-col items-center justify-center gap-0.5 active:scale-95 ${
                       pageCount === opt
-                        ? 'bg-[#F4D35E] text-[#0B1026] shadow-[0_0_15px_rgba(244,211,94,0.4)] scale-105'
-                        : 'text-[#A39BA8] hover:text-[#F5E6CA] hover:bg-white/5'
+                        ? (isDark ? 'bg-[#FCD34D] text-[#451A03] shadow-[0_0_15px_rgba(252,211,77,0.4)] scale-105' : 'bg-[#3B82F6] text-white shadow-[0_0_15px_rgba(59,130,246,0.4)] scale-105')
+                        : (isDark ? 'text-[#D1D5DB] hover:text-[#FEF3C7] hover:bg-white/5' : 'text-[#166534] hover:text-[#064E3B] hover:bg-white/20')
                     }`}
                   >
                     <span className="text-sm sm:text-base leading-none">{opt}</span>
@@ -145,7 +165,7 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language }) => {
             <button
               type="submit"
               disabled={!prompt.trim()}
-              className="w-full bg-gradient-to-br from-[#F4D35E] to-[#D4AF37] text-[#0B1026] font-magic text-xl sm:text-2xl py-3 sm:py-4 rounded-[1.5rem] sm:rounded-[2.5rem] transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:grayscale disabled:scale-100 shadow-[0_0_20px_rgba(244,211,94,0.3)] hover:shadow-[0_0_30px_rgba(244,211,94,0.5)] mt-2 uppercase tracking-widest font-bold backdrop-blur-sm"
+              className={`w-full font-magic text-xl sm:text-2xl py-3 sm:py-4 rounded-[1.5rem] sm:rounded-[2.5rem] transition-all hover:brightness-110 active:scale-95 disabled:opacity-50 disabled:grayscale disabled:scale-100 mt-2 uppercase tracking-widest font-bold backdrop-blur-sm ${isDark ? 'bg-gradient-to-br from-[#FCD34D] to-[#F59E0B] text-[#451A03] shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)]' : 'bg-gradient-to-br from-[#60A5FA] to-[#3B82F6] text-white shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:shadow-[0_0_30px_rgba(59,130,246,0.5)]'}`}
             >
               {t.createButton}
             </button>
