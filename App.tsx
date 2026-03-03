@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { get, set } from 'idb-keyval';
 import { AppState, Story, Language } from './types';
 import { translations } from './translations';
@@ -8,6 +8,7 @@ import StoryWizard from './components/StoryWizard';
 import StoryReader from './components/StoryReader';
 import InfoPanel from './components/InfoPanel';
 import Library from './components/Library';
+import InteractiveLoading from './components/InteractiveLoading';
 import { gemini } from './geminiService';
 
 const STORAGE_KEY = 'magic_dziulis_stories';
@@ -27,7 +28,7 @@ const App: React.FC = () => {
 
   const [showInfo, setShowInfo] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [loadingMessageIdx, setLoadingMessageIdx] = useState(0);
+  const bgAudioRef = useRef<HTMLAudioElement | null>(null);
 
   const t = translations[state.language];
 
@@ -74,7 +75,43 @@ const App: React.FC = () => {
     return () => clearInterval(interval);
   }, [state.isGenerating, t.loadingMessages.length]);
 
+  useEffect(() => {
+    if (!bgAudioRef.current) return;
+    
+    const audio = bgAudioRef.current;
+    
+    if (state.view === 'reader' || !state.hasStarted) {
+      // Fade out
+      const fadeOut = setInterval(() => {
+        if (audio.volume > 0.005) {
+          audio.volume = Math.max(0, audio.volume - 0.005);
+        } else {
+          audio.volume = 0;
+          audio.pause();
+          clearInterval(fadeOut);
+        }
+      }, 100);
+      return () => clearInterval(fadeOut);
+    } else if (state.hasStarted && state.view !== 'reader') {
+      // Fade in
+      audio.play().catch(e => console.warn("Audio play failed:", e));
+      const fadeIn = setInterval(() => {
+        if (audio.volume < 0.025) {
+          audio.volume = Math.min(0.025, audio.volume + 0.005);
+        } else {
+          clearInterval(fadeIn);
+        }
+      }, 100);
+      return () => clearInterval(fadeIn);
+    }
+  }, [state.view, state.hasStarted]);
+
   const handleStart = async () => {
+    if (!bgAudioRef.current) {
+      bgAudioRef.current = new Audio('https://assets.mixkit.co/active_storage/sfx/1210/1210-preview.mp3');
+      bgAudioRef.current.loop = true;
+      bgAudioRef.current.volume = 0;
+    }
     setState(prev => ({ ...prev, hasStarted: true }));
   };
 
@@ -195,7 +232,7 @@ const App: React.FC = () => {
       <div className={`absolute top-0 right-0 w-[80%] h-[70%] blur-[130px] rounded-full pointer-events-none -z-10 transition-colors duration-1000 ${isDark ? 'bg-[#4C1D95]/30' : 'bg-[#7DD3FC]/50'}`} />
       <div className={`absolute bottom-0 left-0 w-[80%] h-[70%] blur-[130px] rounded-full pointer-events-none -z-10 transition-colors duration-1000 ${isDark ? 'bg-[#1D4ED8]/30' : 'bg-[#6EE7B7]/50'}`} />
 
-      <header className={`px-4 py-3 sm:px-6 sm:py-4 flex justify-between items-center backdrop-blur-xl fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${isDark ? 'bg-[#1A1B41]/50' : 'bg-white/40'}`}>
+      <header className={`px-4 py-3 sm:px-6 sm:py-4 flex justify-between items-center backdrop-blur-xl fixed top-0 left-0 right-0 z-50 transition-colors duration-500 ${isDark ? 'bg-[#23214A]/80' : 'bg-white/40'}`}>
         <div 
           className="flex items-center gap-3 cursor-pointer group active:scale-95 transition-transform"
           onClick={handleReset}
@@ -244,7 +281,7 @@ const App: React.FC = () => {
                 className="fixed inset-0 z-40"
                 onClick={() => setShowMenu(false)}
               />
-              <div className={`absolute top-full right-0 mt-2 w-48 rounded-2xl shadow-xl overflow-hidden z-50 animate-[fadeIn_0.2s_ease-out] ${isDark ? 'bg-[#1A1B41]/95 backdrop-blur-xl' : 'bg-white/95 backdrop-blur-xl'}`}>
+              <div className={`absolute top-full right-0 mt-2 w-48 rounded-2xl shadow-xl overflow-hidden z-50 animate-[fadeIn_0.2s_ease-out] ${isDark ? 'bg-[#23214A]/95 backdrop-blur-xl' : 'bg-white/95 backdrop-blur-xl'}`}>
                 <div className="flex flex-col py-2">
                   <button 
                     onClick={() => { toggleTheme(); setShowMenu(false); }}
@@ -310,50 +347,7 @@ const App: React.FC = () => {
           )}
 
           {state.isGenerating && (
-            <div className="flex flex-col items-center justify-center w-full max-w-lg relative py-12">
-              <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                {[...Array(15 + (state.loadingClicks || 0) * 2)].map((_, i) => (
-                  <div
-                    key={i}
-                    className={`absolute rounded-full animate-[floatUp_6s_infinite_ease-in-out] ${isDark ? 'bg-[#FCD34D] shadow-[0_0_10px_#FCD34D]' : 'bg-[#FEF08A] shadow-[0_0_10px_#FEF08A]'}`}
-                    style={{
-                      width: Math.random() * 6 + 2 + 'px',
-                      height: Math.random() * 6 + 2 + 'px',
-                      left: Math.random() * 100 + '%',
-                      bottom: '-10%',
-                      animationDelay: Math.random() * 5 + 's',
-                      opacity: Math.random() * 0.5 + 0.4
-                    }}
-                  />
-                ))}
-              </div>
-
-              <div className="relative mb-10">
-                <div className={`absolute -inset-10 blur-[60px] rounded-full animate-pulse ${isDark ? 'bg-[#4C1D95]/30' : 'bg-[#BBF7D0]/40'}`} />
-                <button 
-                  onClick={() => setState(prev => ({ ...prev, loadingClicks: (prev.loadingClicks || 0) + 1 }))}
-                  className={`w-36 h-36 md:w-44 md:h-44 border rounded-[3.5rem] flex items-center justify-center shadow-[0_25px_60px_-10px_rgba(43,58,103,0.5)] relative overflow-hidden group active:scale-95 transition-transform cursor-pointer ${isDark ? 'bg-gradient-to-br from-[#1A1B41] to-[#312E81] border-[#4C1D95]/30' : 'bg-gradient-to-br from-[#F0F9FF] to-[#DCFCE7] border-[#BBF7D0]/60'}`}
-                >
-                  <div className={`absolute inset-0 -translate-x-full animate-[sweep_4s_infinite] ${isDark ? 'bg-gradient-to-tr from-white/0 via-[#FCD34D]/10 to-white/0' : 'bg-gradient-to-tr from-white/0 via-[#FEF08A]/20 to-white/0'}`} />
-                  <div className={`relative z-10 animate-[bookFlap_2s_infinite_ease-in-out] drop-shadow-[0_0_15px_rgba(252,211,77,0.3)] ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-20 w-20 md:h-24 md:w-24" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  </div>
-                </button>
-              </div>
-
-              <div className="text-center space-y-3 relative z-10 px-6">
-                <div className="h-12 overflow-hidden flex items-center justify-center">
-                  <p key={loadingMessageIdx} className={`text-2xl md:text-3xl font-script animate-[bounceIn_0.6s_cubic-bezier(0.175,0.885,0.32,1.275)] drop-shadow-md ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>
-                    {t.loadingMessages[loadingMessageIdx]}
-                  </p>
-                </div>
-                <p className={`font-bold text-xs md:text-sm tracking-[0.2em] uppercase drop-shadow-sm ${isDark ? 'text-[#FCD34D]' : 'text-[#15803D]'}`}>
-                  {t.waitMoment}
-                </p>
-              </div>
-            </div>
+            <InteractiveLoading language={state.language} theme={state.theme} />
           )}
 
           {state.view === 'reader' && state.currentStory && (
@@ -374,6 +368,12 @@ const App: React.FC = () => {
       {showInfo && <InfoPanel onClose={() => setShowInfo(false)} language={state.language} theme={state.theme} />}
 
       <style>{`
+        @keyframes floatUpInteractive {
+          0% { transform: translateY(0) scale(1) rotate(0deg); opacity: 0; }
+          10% { opacity: 0.9; }
+          90% { opacity: 0.9; }
+          100% { transform: translateY(-120vh) scale(0.5) rotate(360deg); opacity: 0; }
+        }
         @keyframes sweep {
           0% { transform: translateX(-150%) skewX(-15deg); }
           50%, 100% { transform: translateX(150%) skewX(-15deg); }

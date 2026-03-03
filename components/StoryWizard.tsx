@@ -16,10 +16,15 @@ interface SuggestionItem {
 }
 
 const DARK_COLORS = [
-  "bg-[#1E1B4B]/80 text-[#FDE68A] border-[#4C1D95]/50",
-  "bg-[#312E81]/80 text-[#FDE68A] border-[#4338CA]/50",
-  "bg-[#4C1D95]/80 text-[#FDE68A] border-[#6D28D9]/50",
-  "bg-[#172554]/80 text-[#FDE68A] border-[#1E3A8A]/50",
+  "bg-[#312E81]/80 text-[#FDE68A]",
+  "bg-[#4338CA]/80 text-[#FDE68A]",
+  "bg-[#5B21B6]/80 text-[#FDE68A]",
+  "bg-[#1E3A8A]/80 text-[#FDE68A]",
+  "bg-[#0F766E]/80 text-[#CCFBF1]",
+  "bg-[#9F1239]/80 text-[#FFE4E6]",
+  "bg-[#B45309]/80 text-[#FEF3C7]",
+  "bg-[#047857]/80 text-[#D1FAE5]",
+  "bg-[#86198F]/80 text-[#FAE8FF]",
 ];
 
 const LIGHT_COLORS = [
@@ -27,6 +32,10 @@ const LIGHT_COLORS = [
   "bg-[#FEF9C3]/80 text-[#713F12] border-[#FDE047]/50",
   "bg-[#E0F2FE]/80 text-[#0C4A6E] border-[#7DD3FC]/50",
   "bg-[#FCE7F3]/80 text-[#831843] border-[#F9A8D4]/50",
+  "bg-[#FFEDD5]/80 text-[#9A3412] border-[#FDBA74]/50",
+  "bg-[#F3E8FF]/80 text-[#6B21A8] border-[#D8B4FE]/50",
+  "bg-[#CCFBF1]/80 text-[#0F766E] border-[#5EEAD4]/50",
+  "bg-[#FEE2E2]/80 text-[#991B1B] border-[#FCA5A5]/50",
 ];
 
 const StoryWizard: React.FC<Props> = ({ onGenerate, language, theme }) => {
@@ -113,8 +122,8 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language, theme }) => {
           <form onSubmit={handleSubmit} className="space-y-5 sm:space-y-8">
             <div className={`group relative transition-all duration-500 rounded-[1.5rem] sm:rounded-[2.5rem] ${
               isFocused 
-                ? (isDark ? 'bg-[#1A1B41]/80 scale-[1.01] shadow-[0_0_30px_rgba(76,29,149,0.3)]' : 'bg-white/90 scale-[1.01] shadow-[0_0_30px_rgba(187,247,208,0.4)]')
-                : (isDark ? 'bg-[#1A1B41]/60 hover:bg-[#1A1B41]/70' : 'bg-[#FEFCE8]/60 hover:bg-white/70')
+                ? (isDark ? 'bg-[#23214A]/90 scale-[1.01] shadow-[0_0_30px_rgba(76,29,149,0.3)]' : 'bg-white/90 scale-[1.01] shadow-[0_0_30px_rgba(187,247,208,0.4)]')
+                : (isDark ? 'bg-[#23214A]/70 hover:bg-[#23214A]/80' : 'bg-[#FEFCE8]/60 hover:bg-white/70')
             }`}>
               <textarea
                 value={prompt}
@@ -143,7 +152,7 @@ const StoryWizard: React.FC<Props> = ({ onGenerate, language, theme }) => {
               <label className={`text-[10px] font-black uppercase tracking-[0.2em] block opacity-80 drop-shadow-sm ${isDark ? 'text-[#FCD34D]' : 'text-[#166534]'}`}>
                 {t.storyLength}
               </label>
-              <div className={`backdrop-blur-md p-1.5 rounded-[1.5rem] sm:rounded-[2rem] flex justify-between gap-1.5 shadow-inner ${isDark ? 'bg-[#0B0F19]/40' : 'bg-white/40'}`}>
+              <div className={`backdrop-blur-md p-1.5 rounded-[1.5rem] sm:rounded-[2rem] flex justify-between gap-1.5 shadow-inner ${isDark ? 'bg-[#1A1B41]/60' : 'bg-white/40'}`}>
                 {pageOptions.map((opt) => (
                   <button
                     key={opt}

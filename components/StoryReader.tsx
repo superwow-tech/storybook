@@ -229,7 +229,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
         }}
       >
         
-        <div className={`w-full aspect-[4/3] relative overflow-hidden group rounded-[2rem] shadow-2xl ${isDark ? 'bg-[#1A1B41]/50' : 'bg-white/50'}`}>
+        <div className={`w-full aspect-[4/3] relative overflow-hidden group rounded-[2rem] shadow-2xl ${isDark ? 'bg-[#23214A]/60' : 'bg-white/50'}`}>
           {currentPage?.imageUrl ? (
             <img 
               key={currentPage.imageUrl}
@@ -281,7 +281,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
                     if (onSave) onSave();
                   }, 1000);
                 }}
-                className={`backdrop-blur-md p-3 rounded-full shadow-lg transition-all active:scale-95 group ${isDark ? 'bg-[#1A1B41]/80 text-[#FCD34D] hover:bg-[#312E81]' : 'bg-white/80 text-[#3B82F6] hover:bg-white'}`}
+                className={`backdrop-blur-md p-3 rounded-full shadow-lg transition-all active:scale-95 group ${isDark ? 'bg-[#23214A]/90 text-[#FCD34D] hover:bg-[#312E81]' : 'bg-white/80 text-[#3B82F6] hover:bg-white'}`}
                 title={t.saveToBookshelf}
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 group-hover:scale-110 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -300,7 +300,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
 
         <div className="flex flex-col gap-5">
           <div className="space-y-4">
-            <div className={`min-h-[160px] sm:min-h-[200px] backdrop-blur-md p-6 rounded-[2rem] overflow-y-auto scrollbar-hide shadow-inner ${isDark ? 'bg-[#1A1B41]/60' : 'bg-white/60'}`}>
+            <div className={`min-h-[160px] sm:min-h-[200px] backdrop-blur-md p-6 rounded-[2rem] overflow-y-auto scrollbar-hide shadow-inner ${isDark ? 'bg-[#23214A]/80' : 'bg-white/60'}`}>
               <p className={`text-lg sm:text-xl font-medium leading-relaxed transition-all ${isDark ? 'text-[#FEF3C7]' : 'text-[#166534]'}`}>
                 {words.map((word, idx) => {
                   const isActive = idx === highlightIndex;
@@ -339,8 +339,8 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
               disabled={!currentPage?.audioData && !isPlaying}
               className={`w-full flex items-center justify-center gap-3 py-3 sm:py-4 rounded-[1.5rem] transition-all overflow-hidden relative shadow-lg ${
                 isPlaying 
-                  ? (isDark ? 'bg-[#1A1B41]/40 backdrop-blur-md text-[#D1D5DB] hover:bg-[#1A1B41]/60' : 'bg-white/40 backdrop-blur-md text-[#166534] hover:bg-white/60')
-                  : (isDark ? 'bg-gradient-to-r from-[#312E81] to-[#1E1B4B] text-[#FEF3C7] hover:brightness-110' : 'bg-gradient-to-r from-[#60A5FA] to-[#3B82F6] text-white hover:brightness-110')
+                  ? (isDark ? 'bg-[#23214A]/60 backdrop-blur-md text-[#D1D5DB] hover:bg-[#23214A]/80' : 'bg-white/40 backdrop-blur-md text-[#166534] hover:bg-white/60')
+                  : (isDark ? 'bg-gradient-to-r from-[#4338CA] to-[#312E81] text-[#FEF3C7] hover:brightness-110' : 'bg-gradient-to-r from-[#60A5FA] to-[#3B82F6] text-white hover:brightness-110')
               }`}
             >
               {isPlaying ? (
@@ -376,7 +376,7 @@ const StoryReader: React.FC<Props> = ({ story, currentIndex, onPageChange, onRes
                 )}
                 <button
                   onClick={onReset}
-                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-[1.5rem] font-magic text-xl transition-all animate-[bounceIn_0.5s_ease-out] uppercase tracking-wide font-bold ${isDark ? 'text-[#FEF3C7] bg-[#312E81] hover:bg-[#4C1D95]' : 'text-[#166534] bg-white hover:bg-[#F0FDF4]'}`}
+                  className={`w-full flex items-center justify-center gap-2 py-3 rounded-[1.5rem] font-magic text-xl transition-all animate-[bounceIn_0.5s_ease-out] uppercase tracking-wide font-bold ${isDark ? 'text-[#FEF3C7] bg-[#4338CA] hover:bg-[#4C1D95]' : 'text-[#166534] bg-white hover:bg-[#F0FDF4]'}`}
                 >
                   <span>{t.oneMore}</span>
                 </button>

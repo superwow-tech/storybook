@@ -46,13 +46,6 @@ const LandingPage: React.FC<Props> = ({ onStart, language, theme }) => {
 
   const handleStartClick = () => {
     if (navigator.vibrate) navigator.vibrate(50);
-    try {
-      const audio = new Audio('https://assets.mixkit.co/active_storage/sfx/1210/1210-preview.mp3');
-      audio.volume = 0.025;
-      audio.play().catch(e => console.warn("Audio play failed:", e));
-    } catch (e) {
-      console.warn("Audio init failed:", e);
-    }
     onStart();
   };
 
@@ -71,7 +64,7 @@ const LandingPage: React.FC<Props> = ({ onStart, language, theme }) => {
       <div className={`absolute top-0 right-0 w-[80%] h-[70%] blur-[130px] rounded-full pointer-events-none -z-10 transition-colors duration-1000 ${isDark ? 'bg-[#4C1D95]/30' : 'bg-[#7DD3FC]/50'}`} />
       <div className={`absolute bottom-0 left-0 w-[80%] h-[70%] blur-[130px] rounded-full pointer-events-none -z-10 transition-colors duration-1000 ${isDark ? 'bg-[#1D4ED8]/30' : 'bg-[#6EE7B7]/50'}`} />
       
-      <div className={`max-w-md w-full backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-10 text-center relative z-10 transform hover:scale-[1.01] transition-all shadow-[0_0_40px_rgba(11,16,38,0.5)] ${isDark ? 'bg-[#1A1B41]/70' : 'bg-white/70'}`}>
+      <div className={`max-w-md w-full backdrop-blur-xl rounded-[2.5rem] p-6 sm:p-10 text-center relative z-10 transform hover:scale-[1.01] transition-all shadow-[0_0_40px_rgba(11,16,38,0.5)] ${isDark ? 'bg-[#23214A]/80' : 'bg-white/70'}`}>
         <div className="flex items-center justify-center gap-3 mb-6">
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" className={`w-12 h-12 sm:w-16 sm:h-16 filter hover:rotate-6 transition-transform duration-300 ${isDark ? 'drop-shadow-[0_0_15px_rgba(252,211,77,0.6)]' : 'drop-shadow-lg'}`}>
             <path d="M496.1 416h-27.2c-12.9 0-24.6-7.8-29.6-19.8l-15.5-37.1C412.2 331.3 367.8 248.8 306.6 128c-3.2-6.4-23.7-58.6-23.7-58.6s-9.8-23.2-16.1-23.2h-21.6c-6.3 0-16.1 23.2-16.1 23.2S208.6 121.6 205.4 128c-61.2 120.8-105.6 203.3-117.2 231.1l-15.5 37.1c-5 12-16.7 19.8-29.6 19.8H15.9c-10.8 0-18.7 10.3-15.5 20.6l10.8 34.6c2.4 7.6 9.4 12.8 17.4 12.8h454.8c8 0 15-5.2 17.4-12.8l10.8-34.6c3.2-10.3-4.7-20.6-15.5-20.6z" fill={isDark ? "#3730A3" : "#3B82F6"}/>
@@ -84,7 +77,7 @@ const LandingPage: React.FC<Props> = ({ onStart, language, theme }) => {
         </div>
         
         {/* Welcome Image */}
-        <div className={`w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 shadow-2xl relative group ${isDark ? 'bg-[#1A1B41]/50' : 'bg-white/50'}`}>
+        <div className={`w-full aspect-[4/3] rounded-2xl overflow-hidden mb-6 shadow-2xl relative group ${isDark ? 'bg-[#312E81]/40' : 'bg-white/50'}`}>
           {welcomeImage ? (
             <img 
               src={welcomeImage} 

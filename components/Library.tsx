@@ -66,9 +66,9 @@ const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, languag
             <div 
               key={story.id} 
               onClick={() => onLoadStory(story)}
-              className={`group backdrop-blur-md rounded-[2.5rem] transition-all duration-500 overflow-hidden flex flex-col p-4 relative hover:-translate-y-2 cursor-pointer ${isDark ? 'bg-[#1A1B41]/60 hover:shadow-[0_0_30px_rgba(76,29,149,0.2)]' : 'bg-white/60 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]'}`}
+              className={`group backdrop-blur-md rounded-[2.5rem] transition-all duration-500 overflow-hidden flex flex-col p-4 relative hover:-translate-y-2 cursor-pointer ${isDark ? 'bg-[#23214A]/80 hover:shadow-[0_0_30px_rgba(76,29,149,0.2)]' : 'bg-white/60 hover:shadow-[0_0_30px_rgba(59,130,246,0.2)]'}`}
             >
-              <div className={`aspect-[4/3] rounded-[2rem] overflow-hidden mb-4 shadow-inner relative ${isDark ? 'bg-[#0B0F19]/50' : 'bg-white/50'}`}>
+              <div className={`aspect-[4/3] rounded-[2rem] overflow-hidden mb-4 shadow-inner relative ${isDark ? 'bg-[#312E81]/40' : 'bg-white/50'}`}>
                 {story.pages[0]?.imageUrl && (
                   <img 
                     src={story.pages[0].imageUrl} 
@@ -76,7 +76,7 @@ const Library: React.FC<Props> = ({ stories, onLoadStory, onDeleteStory, languag
                     className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
                   />
                 )}
-                <div className={`absolute top-3 right-3 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black shadow-sm ${isDark ? 'bg-[#1A1B41]/80 text-[#FCD34D]' : 'bg-white/80 text-[#3B82F6]'}`}>
+                <div className={`absolute top-3 right-3 backdrop-blur-sm px-3 py-1 rounded-full text-[10px] font-black shadow-sm ${isDark ? 'bg-[#23214A]/90 text-[#FCD34D]' : 'bg-white/80 text-[#3B82F6]'}`}>
                   {story.pages.length} {t.pages}
                 </div>
               </div>
